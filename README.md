@@ -1,1 +1,1 @@
-# Music-Bot
+# Musicify
