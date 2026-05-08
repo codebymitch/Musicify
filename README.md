@@ -1,1 +1,1 @@
-# ![Musicify Cover](/.github/assets/final1.png)
+# ![Musicify Cover](/.github/assets/Banner.png)
