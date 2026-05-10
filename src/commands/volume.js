@@ -11,7 +11,7 @@ module.exports = {
                 .setDescription("Volume level (0-150)")
                 .setRequired(true)
                 .setMinValue(0)
-                .setMaxValue(150)
+                .setMaxValue(100)
         ),
 
     async execute(interaction, client) {
@@ -30,7 +30,8 @@ module.exports = {
             });
         }
 
-        const level = interaction.options.getInteger("level");
+        const level = Math.min(100, Math.max(0, interaction.options.getInteger("level")));
+
         const guildData = getGuildData(interaction.guild.id);
         guildData.volume = level;
         player.setVolume(level);
