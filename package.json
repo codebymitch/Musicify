@@ -1,0 +1,16 @@
+{
+  "name": "musicify",
+  "version": "1.0.0",
+  "description": "Musicify - A multi-guild Discord music bot with ChatPlay",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "deploy": "node src/deploy-commands.js"
+  },
+  "dependencies": {
+    "discord.js": "14.25.1",
+    "dotenv": "^16.4.7",
+    "musicard": "latest",
+    "riffy": "1.0.12"
+  }
+}
