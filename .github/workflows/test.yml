@@ -39,11 +39,11 @@ jobs:
           node -e "
             const fs = require('fs');
             const path = require('path');
-            const commandsDir = path.join(__dirname, 'src/commands');
+            const commandsDir = path.resolve('src/commands');
             const files = fs.readdirSync(commandsDir).filter(f => f.endsWith('.js'));
             let ok = true;
             for (const file of files) {
-              const cmd = require(path.join(commandsDir, file));
+              const cmd = require(path.resolve(commandsDir, file));
               if (!cmd.data) {
                 console.error('FAIL: ' + file + ' — missing \"data\"');
                 ok = false;
