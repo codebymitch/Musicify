@@ -92,6 +92,10 @@ function startUpdateInterval(client, guildId) {
  * Set up all riffy player event handlers
  */
 function setupPlayerHandler(client) {
+    if (!client.riffy) {
+        console.warn('[Musicify] Riffy client not initialized; player handlers not attached.');
+        return;
+    }
     // --- Node Connected ---
     client.riffy.on("nodeConnect", (node) => {
         console.log(`[Musicify] Lavalink node "${node.name}" connected.`);
