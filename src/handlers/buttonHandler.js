@@ -291,34 +291,45 @@ async function handleButtonInteraction(client, interaction) {
  * This avoids the 3-second interaction timeout
  */
 async function editPlayerMessageDirectly(client, player, guildData) {
-    try {
-        if (!player || !player.current) return;
+     try {
+         if (!player || !player.current) return;
 
-        const musicardBuffer = await generateMusicCard(player.current, player, guildData);
-        const container = createNowPlayingContainer(player.current, player, guildData, musicardBuffer);
+         const musicardBuffer = await generateMusicCard(player.current, player, guildData);
+         const container = createNowPlayingContainer(player.current, player, guildData, musicardBuffer);
 
-        const files = [];
-        if (musicardBuffer) {
-            files.push(new AttachmentBuilder(musicardBuffer, { name: "musicard.png" }));
-        }
+         const files = [];
+         if (musicardBuffer) {
+             files.push(new AttachmentBuilder(musicardBuffer, { name: "musicard.png" }));
+         }
 
-        const channelId = guildData.chatPlayChannelId || guildData.playerChannelId || player.textChannel;
-        const channel = client.channels.cache.get(channelId);
-        if (!channel) return;
+         const channelId = guildData.chatPlayChannelId || guildData.playerChannelId || player.textChannel;
+         const channel = client.channels.cache.get(channelId);
+         if (!channel) {
+             guildData.chatPlayMessageId = null;
+             guildData.playerMessageId = null;
+             guildData.playerChannelId = null;
+             return;
+         }
 
-        const messageId = guildData.chatPlayMessageId || guildData.playerMessageId;
-        if (!messageId) return;
+         const messageId = guildData.chatPlayMessageId || guildData.playerMessageId;
+         if (!messageId) return;
 
-        const msg = await channel.messages.fetch(messageId);
-        await msg.edit({
-            components: [container],
-            files: files,
-            flags: MessageFlags.IsComponentsV2,
-        });
-    } catch (error) {
+         const msg = await channel.messages.fetch(messageId);
+         await msg.edit({
+             components: [container],
+             files: files,
+             flags: MessageFlags.IsComponentsV2,
+         });
+} catch (error) {
+        // Message was deleted — clear stale IDs so next action sends a fresh one
+        guildData.chatPlayMessageId = null;
+        guildData.playerMessageId = null;
+        guildData.playerChannelId = null;
+        guildData.updateInterval && clearInterval(guildData.updateInterval);
+        guildData.updateInterval = null;
         console.error("[Musicify] Button edit error:", error.message);
     }
-}
+ }
 
 /**
  * Inline node details builder for the node stats dropdown

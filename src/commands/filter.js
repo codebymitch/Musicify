@@ -4,48 +4,75 @@ const FILTER_PRESETS = {
     bassboost: {
         name: "Bass Boost",
         emoji: "🔊",
-        equalizer: [
-            { band: 0, gain: 0.6 },
-            { band: 1, gain: 0.5 },
-            { band: 2, gain: 0.4 },
-            { band: 3, gain: 0.3 },
-            { band: 4, gain: 0.15 },
-        ],
+        apply: (player) => player.filters.setBassboost(true, { value: 4 }),
     },
     nightcore: {
         name: "Nightcore",
         emoji: "🌙",
-        timescale: { speed: 1.2, pitch: 1.2, rate: 1.0 },
+        apply: (player) =>
+            player.filters.setTimescale(true, { speed: 1.2, pitch: 1.2, rate: 1.0 }),
     },
     vaporwave: {
         name: "Vaporwave",
         emoji: "🌊",
-        timescale: { speed: 0.85, pitch: 0.85, rate: 1.0 },
+        apply: (player) =>
+            player.filters.setVaporwave(true, { pitch: 0.5 }),
     },
     "8d": {
         name: "8D Audio",
         emoji: "🎧",
-        rotation: { rotationHz: 0.2 },
+        apply: (player) =>
+            player.filters.set8D(true, { rotationHz: 0.2 }),
     },
     tremolo: {
         name: "Tremolo",
         emoji: "〰️",
-        tremolo: { frequency: 4.0, depth: 0.75 },
+        apply: (player) =>
+            player.filters.setTremolo(true, { frequency: 4.0, depth: 0.75 }),
     },
     vibrato: {
         name: "Vibrato",
         emoji: "🎸",
-        vibrato: { frequency: 4.0, depth: 0.75 },
+        apply: (player) =>
+            player.filters.setVibrato(true, { frequency: 4.0, depth: 0.75 }),
     },
     karaoke: {
         name: "Karaoke",
         emoji: "🎤",
-        karaoke: { level: 1.0, monoLevel: 1.0, filterBand: 220.0, filterWidth: 100.0 },
+        apply: (player) =>
+            player.filters.setKaraoke(true, {
+                level: 1.0,
+                monoLevel: 1.0,
+                filterBand: 220.0,
+                filterWidth: 100.0,
+            }),
     },
     lowpass: {
         name: "Low Pass",
         emoji: "🔈",
-        lowPass: { smoothing: 20.0 },
+        apply: (player) =>
+            player.filters.setLowPass(true, { smoothing: 20.0 }),
+    },
+    slowmode: {
+        name: "Slow Mode",
+        emoji: "🐌",
+        apply: (player) =>
+            player.filters.setSlowmode(true, { rate: 0.8 }),
+    },
+    distortion: {
+        name: "Distortion",
+        emoji: "💥",
+        apply: (player) =>
+            player.filters.setDistortion(true, {
+                sinOffset: 0,
+                sinScale: 1,
+                cosOffset: 0,
+                cosScale: 1,
+                tanOffset: 0,
+                tanScale: 1,
+                offset: 0,
+                scale: 1,
+            }),
     },
 };
 
@@ -67,6 +94,8 @@ module.exports = {
                     { name: "🎸 Vibrato", value: "vibrato" },
                     { name: "🎤 Karaoke", value: "karaoke" },
                     { name: "🔈 Low Pass", value: "lowpass" },
+                    { name: "🐌 Slow Mode", value: "slowmode" },
+                    { name: "💥 Distortion", value: "distortion" },
                     { name: "❌ Reset All", value: "reset" }
                 )
         ),
@@ -90,14 +119,7 @@ module.exports = {
         const preset = interaction.options.getString("preset");
 
         if (preset === "reset") {
-            // Reset all filters
-            player.node.rest.updatePlayer({
-                guildId: interaction.guild.id,
-                data: {
-                    filters: {},
-                },
-            });
-
+            player.filters.clearFilters();
             return interaction.reply({
                 content: "✅ All filters have been **reset**.",
                 flags: MessageFlags.Ephemeral,
@@ -112,20 +134,7 @@ module.exports = {
             });
         }
 
-        // Build the filters object
-        const filters = {};
-        if (filter.equalizer) filters.equalizer = filter.equalizer;
-        if (filter.timescale) filters.timescale = filter.timescale;
-        if (filter.rotation) filters.rotation = filter.rotation;
-        if (filter.tremolo) filters.tremolo = filter.tremolo;
-        if (filter.vibrato) filters.vibrato = filter.vibrato;
-        if (filter.karaoke) filters.karaoke = filter.karaoke;
-        if (filter.lowPass) filters.lowPass = filter.lowPass;
-
-        player.node.rest.updatePlayer({
-            guildId: interaction.guild.id,
-            data: { filters },
-        });
+        filter.apply(player);
 
         await interaction.reply({
             content: `${filter.emoji} Applied **${filter.name}** filter!`,

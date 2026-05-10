@@ -12,7 +12,13 @@ const UPDATE_INTERVAL_MS = 15 * 1000; // 15 seconds
  */
 async function editOrSendPlayerMessage(client, guildData, channelId, container, files) {
     const channel = client.channels.cache.get(channelId);
-    if (!channel) return;
+    if (!channel) {
+        // Channel no longer exists; clear stale IDs
+        guildData.chatPlayMessageId = null;
+        guildData.playerMessageId = null;
+        guildData.playerChannelId = null;
+        return;
+    }
 
     const messageId = guildData.chatPlayMessageId || guildData.playerMessageId;
 
@@ -26,8 +32,13 @@ async function editOrSendPlayerMessage(client, guildData, channelId, container, 
             });
             return;
         } catch (err) {
-            // Message deleted — fall through to send a new one
-        }
+            // Message or channel no longer exists — clear stale IDs and send a new one
+            guildData.chatPlayMessageId = null;
+            guildData.playerMessageId = null;
+            guildData.playerChannelId = null;
+            guildData.updateInterval && clearInterval(guildData.updateInterval);
+            guildData.updateInterval = null;
+}
     }
 
     try {
@@ -106,39 +117,9 @@ function setupPlayerHandler(client) {
         console.error(`[Musicify] Node "${node.name}" error:`, error.message);
     });
 
-    // --- Node Disconnect (auto-reconnect) ---
-    client.riffy.on("nodeDisconnect", (node) => {
-        console.warn(`[Musicify] Node "${node.name}" disconnected. Attempting auto-reconnect...`);
-
-        let attempts = 0;
-        const maxAttempts = 10;
-
-        const tryReconnect = () => {
-            attempts++;
-            const delay = Math.min(5000 * Math.pow(2, attempts - 1), 60000); // 5s, 10s, 20s... max 60s
-
-            setTimeout(() => {
-                if (node.connected) {
-                    console.log(`[Musicify] Node "${node.name}" already reconnected.`);
-                    return;
-                }
-
-                console.log(`[Musicify] Reconnect attempt ${attempts}/${maxAttempts} for node "${node.name}"...`);
-                try {
-                    node.connect();
-                } catch (err) {
-                    console.error(`[Musicify] Reconnect failed for "${node.name}":`, err.message);
-                }
-
-                if (!node.connected && attempts < maxAttempts) {
-                    tryReconnect();
-                } else if (attempts >= maxAttempts) {
-                    console.error(`[Musicify] Gave up reconnecting to "${node.name}" after ${maxAttempts} attempts.`);
-                }
-            }, delay);
-        };
-
-        tryReconnect();
+    // --- Node Reconnected (Riffy built-in auto-reconnect) ---
+    client.riffy.on("nodeReconnect", (node) => {
+        console.log(`[Musicify] Node "${node.name}" reconnected successfully.`);
     });
 
     // --- Track Start ---
