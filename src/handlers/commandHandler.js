@@ -20,13 +20,17 @@ function loadCommands(client) {
         .filter((file) => file.endsWith(".js"));
 
     for (const file of commandFiles) {
-        const command = require(path.join(commandsPath, file));
-        if (command.data && command.execute) {
-            client.commands.set(command.data.name, command);
-            console.log(`[Musicify] Loaded command: /${command.data.name}`);
-        } else {
-            console.warn(`[Musicify] Command ${file} is missing 'data' or 'execute'.`);
-        }
+            try {
+                const command = require(path.join(commandsPath, file));
+                if (command.data && command.execute) {
+                    client.commands.set(command.data.name, command);
+                    console.log(`[Musicify] Loaded command: /${command.data.name}`);
+                } else {
+                    console.warn(`[Musicify] Command ${file} is missing "data" or "execute".`);
+                }
+            } catch (err) {
+                console.error(`[Musicify] Failed to load command ${file}:`, err.message);
+            }
     }
 }
 
