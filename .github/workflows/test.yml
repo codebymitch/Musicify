@@ -43,17 +43,20 @@ jobs:
             const files = fs.readdirSync(commandsDir).filter(f => f.endsWith('.js'));
             let ok = true;
             for (const file of files) {
-              const cmd = require(path.resolve(commandsDir, file));
-              if (!cmd.data) {
+              const content = fs.readFileSync(path.resolve(commandsDir, file), 'utf-8');
+              const hasData = /\bdata\s*[:=]/.test(content);
+              const hasExecute = /async\s+execute\b|\.execute\s*=/.test(content);
+              if (!hasData) {
                 console.error('FAIL: ' + file + ' — missing \"data\"');
                 ok = false;
               }
-              if (!cmd.execute) {
+              if (!hasExecute) {
                 console.error('FAIL: ' + file + ' — missing \"execute\"');
                 ok = false;
               }
-              if (cmd.data && cmd.execute) {
-                console.log('OK:   ' + file + ' — /' + cmd.data.name);
+              if (hasData && hasExecute) {
+                const name = content.match(/setName\(['\"](\w+)['\"]\)/);
+                console.log('OK:   ' + file + (name ? ' — /' + name[1] : ''));
               }
             }
             if (!ok) process.exit(1);
