@@ -1,0 +1,61 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Syntax check all source files
+        run: |
+          for file in $(find src -name "*.js" | sort); do
+            echo "Checking $file..."
+            node -c "$file"
+          done
+          echo "All files passed syntax check."
+
+      - name: Validate command structure
+        run: |
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const commandsDir = path.join(__dirname, 'src/commands');
+            const files = fs.readdirSync(commandsDir).filter(f => f.endsWith('.js'));
+            let ok = true;
+            for (const file of files) {
+              const cmd = require(path.join(commandsDir, file));
+              if (!cmd.data) {
+                console.error('FAIL: ' + file + ' — missing \"data\"');
+                ok = false;
+              }
+              if (!cmd.execute) {
+                console.error('FAIL: ' + file + ' — missing \"execute\"');
+                ok = false;
+              }
+              if (cmd.data && cmd.execute) {
+                console.log('OK:   ' + file + ' — /' + cmd.data.name);
+              }
+            }
+            if (!ok) process.exit(1);
+            console.log('All ' + files.length + ' commands validated.');
+          "
