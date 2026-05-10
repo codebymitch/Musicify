@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
 
 module.exports = {
@@ -39,9 +39,19 @@ module.exports = {
         player.setLoop(mode);
 
         const labels = { none: "Off", track: "Track", queue: "Queue" };
+        const emojis = { none: "➡️", track: "🔂", queue: "🔁" };
+
+        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `### ${emojis[mode]} Loop Updated\n\n` +
+                "**Mode**\n" +
+                `-# ${labels[mode]}`
+            )
+        );
         await interaction.reply({
-            content: `🔁 Loop set to **${labels[mode]}**`,
-            flags: MessageFlags.Ephemeral,
+            components: [container],
+            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
         });
     },
 };

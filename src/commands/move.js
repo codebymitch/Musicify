@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -56,9 +56,19 @@ module.exports = {
         const [track] = player.queue.splice(from - 1, 1);
         player.queue.splice(to - 1, 0, track);
 
+        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                "### ↕️ Track Moved\n\n" +
+                "**Track**\n" +
+                `-# ${track.info.title}\n\n` +
+                "**Position**\n" +
+                `-# #${from} → #${to}`
+            )
+        );
         await interaction.reply({
-            content: `↕️ Moved **${track.info.title}** from position **${from}** → **${to}**`,
-            flags: MessageFlags.Ephemeral,
+            components: [container],
+            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
         });
     },
 };

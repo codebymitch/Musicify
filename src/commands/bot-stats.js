@@ -18,6 +18,21 @@ module.exports = {
 
         const container = new ContainerBuilder().setAccentColor(0xfacc15);
 
+        // --- Header with bot avatar ---
+        const header = new SectionBuilder()
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent("### 📊 Bot Statistics"),
+                new TextDisplayBuilder().setContent(`-# ${client.user.tag}`)
+            )
+            .setThumbnailAccessory(
+                new ThumbnailBuilder().setURL(
+                    client.user.displayAvatarURL({ size: 128 })
+                )
+            );
+
+        container.addSectionComponents(header);
+
+        container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
         // --- Uptime ---
         const uptime = process.uptime();
@@ -38,44 +53,54 @@ module.exports = {
         const totalUsers = client.guilds.cache.reduce((a, g) => a + g.memberCount, 0);
         const totalChannels = client.channels.cache.size;
         const activePlayers = client.riffy.players?.size || 0;
-
-        container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
+        const totalNodes = client.riffy.nodes?.length || client.riffy.nodes?.size || 0;
 
         // --- General ---
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `**General**\n` +
-                `-#  **ID:** ${client.user.id}\n` +
-                `-#  **Uptime:** ${uptimeStr}\n` +
-                `-#  **Ping:** ${client.ws.ping}ms\n` +
-                `-#  **Node.js:** ${process.version}\n` +
-                `-#  **discord.js:** v${require("discord.js").version}`
+                "**General**\n\n" +
+                "**Bot ID**\n" +
+                `-# ${client.user.id}\n\n` +
+                "**Uptime**\n" +
+                `-# ${uptimeStr}\n\n` +
+                "**Ping**\n" +
+                `-# ${client.ws.ping}ms\n\n` +
+                "**Runtime**\n" +
+                `-# Node.js ${process.version} · discord.js v${require("discord.js").version}`
             )
         );
 
-        container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
+        container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
         // --- Servers & Players ---
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `**Servers & Players**\n` +
-                `-#  **Guilds:** ${totalGuilds.toLocaleString()}\n` +
-                `-#  **Users:** ${totalUsers.toLocaleString()}\n` +
-                `-#  **Channels:** ${totalChannels.toLocaleString()}\n` +
-                `-#  **Active Players:** ${activePlayers}\n` +
-                `-#  **Lavalink Nodes:** ${client.riffy.nodes?.length || client.riffy.nodes?.size || 0}`
+                "**Servers & Players**\n\n" +
+                "**Guilds**\n" +
+                `-# ${totalGuilds.toLocaleString()}\n\n` +
+                "**Users**\n" +
+                `-# ${totalUsers.toLocaleString()}\n\n` +
+                "**Channels**\n" +
+                `-# ${totalChannels.toLocaleString()}\n\n` +
+                "**Active Players**\n" +
+                `-# ${activePlayers}\n\n` +
+                "**Lavalink Nodes**\n" +
+                `-# ${totalNodes}`
             )
         );
 
-        container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
+        container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
         // --- Memory ---
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `**Memory**\n` +
-                `-#  **Heap Used:** ${memUsed} MB\n` +
-                `-#  **Heap Total:** ${memTotal} MB\n` +
-                `-#  **RSS:** ${memRSS} MB`
+                "**Memory**\n\n" +
+                "**Heap Used**\n" +
+                `-# ${memUsed} MB\n\n` +
+                "**Heap Total**\n" +
+                `-# ${memTotal} MB\n\n` +
+                "**RSS**\n" +
+                `-# ${memRSS} MB`
             )
         );
 

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { formatDuration } = require("../utils/components");
 
 module.exports = {
@@ -58,9 +58,20 @@ module.exports = {
         }
 
         player.seek(ms);
+
+        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                "### ⏩ Seeked\n\n" +
+                "**Position**\n" +
+                `-# ${formatDuration(ms)} / ${formatDuration(player.current.info.length)}\n\n` +
+                "**Track**\n" +
+                `-# ${player.current.info.title}`
+            )
+        );
         await interaction.reply({
-            content: `⏩ Seeked to **${formatDuration(ms)}**`,
-            flags: MessageFlags.Ephemeral,
+            components: [container],
+            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
         });
     },
 };

@@ -37,6 +37,14 @@ async function handleChatPlayMessage(client, message) {
     // Check if the user is in a voice channel
     const voiceChannel = message.member?.voice?.channel;
     if (!voiceChannel) {
+        try {
+            const warn = await message.channel.send({
+                content: "❌ You need to join a voice channel first!",
+            });
+            setTimeout(() => warn.delete().catch(() => {}), 5000);
+        } catch (err) {
+            // Can't send in channel — ignore
+        }
         return true;
     }
 

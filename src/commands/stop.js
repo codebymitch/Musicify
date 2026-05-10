@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
-const { deleteGuildData } = require("../utils/playerStore");
+const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { getGuildData, clearUpdateInterval } = require("../utils/playerStore");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -22,13 +22,33 @@ module.exports = {
             });
         }
 
+        // Clean up guild state
+        const guildData = getGuildData(interaction.guild.id);
+        clearUpdateInterval(guildData);
+        if (guildData.idleTimeout) {
+            clearTimeout(guildData.idleTimeout);
+            guildData.idleTimeout = null;
+        }
+        guildData.playerMessageId = null;
+        guildData.playerChannelId = null;
+        guildData.suggestions = [];
+        guildData.previousTracks = [];
+
         player.queue.clear();
         player.stop();
         player.destroy();
 
+        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                "### ⏹ Stopped\n\n" +
+                "**Status**\n" +
+                "-# Queue cleared and disconnected from voice channel."
+            )
+        );
         await interaction.reply({
-            content: "⏹ Stopped and disconnected!",
-            flags: MessageFlags.Ephemeral,
+            components: [container],
+            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
         });
     },
 };

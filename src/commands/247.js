@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
 const { setGuildSetting, getGuildSettings } = require("../utils/database");
 
@@ -19,12 +19,10 @@ module.exports = {
         const guildData = getGuildData(guildId);
         const dbSettings = getGuildSettings(guildId);
 
-        // Toggle
         const newState = !dbSettings.twentyFourSeven;
         guildData.twentyFourSeven = newState;
         setGuildSetting(guildId, "twentyFourSeven", newState);
 
-        // If enabling, ensure player exists
         if (newState) {
             let player = client.riffy.players.get(guildId);
             if (!player) {
@@ -37,11 +35,25 @@ module.exports = {
             }
         }
 
+        const emoji = newState ? "✅" : "⏹";
+        const label = newState ? "Enabled" : "Disabled";
+        const desc = newState
+            ? "Active — I'll stay in the voice channel."
+            : "Inactive — I'll leave when the queue is empty.";
+
+        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `### ${emoji} 24/7 Mode ${label}\n\n` +
+                "**Status**\n" +
+                `-# ${desc}\n\n` +
+                "**Persists**\n" +
+                "-# This setting is saved across bot restarts."
+            )
+        );
         await interaction.reply({
-            content: newState
-                ? "✅ 24/7 mode **enabled** — I'll stay in the voice channel."
-                : "⏹ 24/7 mode **disabled** — I'll leave when the queue is empty.",
-            flags: MessageFlags.Ephemeral,
+            components: [container],
+            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
         });
     },
 };

@@ -16,6 +16,7 @@ class GuildData {
         this.previousTracks = [];
         this.suggestions = [];
         this.twentyFourSeven = false;
+        this.queuePages = new Map(); // per-user queue page state
         this.updateInterval = null; // 15s musicard auto-update timer
         this.idleTimeout = null; // 30s disconnect timeout
     }

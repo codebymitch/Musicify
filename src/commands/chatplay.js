@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, MessageFlags, PermissionFlagsBits } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
 const { createChatPlayIdleContainer } = require("../utils/components");
 const { setGuildSetting, deleteGuildSetting } = require("../utils/database");
@@ -8,19 +8,13 @@ module.exports = {
         .setName("chatplay")
         .setDescription("Manage ChatPlay mode")
         .addSubcommand((sub) =>
-            sub
-                .setName("setup")
-                .setDescription("Set up ChatPlay in this channel (sends persistent message)")
+            sub.setName("setup").setDescription("Set up ChatPlay in this channel (sends persistent message)")
         )
         .addSubcommand((sub) =>
-            sub
-                .setName("enable")
-                .setDescription("Enable ChatPlay in a previously set up channel")
+            sub.setName("enable").setDescription("Enable ChatPlay in a previously set up channel")
         )
         .addSubcommand((sub) =>
-            sub
-                .setName("disable")
-                .setDescription("Disable ChatPlay (keeps the message but stops listening)")
+            sub.setName("disable").setDescription("Disable ChatPlay (keeps the message but stops listening)")
         ),
 
     async execute(interaction, client) {
@@ -29,8 +23,6 @@ module.exports = {
         const guildData = getGuildData(guildId);
 
         if (sub === "setup") {
-            // --- SETUP: send idle message in this channel ---
-
             // Clean up old ChatPlay message if it exists
             if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
                 try {
@@ -44,31 +36,37 @@ module.exports = {
                 }
             }
 
-            // Send the idle container
             const container = createChatPlayIdleContainer();
             const chatMsg = await interaction.channel.send({
                 components: [container],
                 flags: MessageFlags.IsComponentsV2,
             });
 
-            // Store state in memory
             guildData.chatPlayChannelId = interaction.channel.id;
             guildData.chatPlayMessageId = chatMsg.id;
             guildData.chatPlayEnabled = true;
             guildData.playerChannelId = interaction.channel.id;
 
-            // Persist to JSON database
             setGuildSetting(guildId, "chatPlayChannelId", interaction.channel.id);
             setGuildSetting(guildId, "chatPlayMessageId", chatMsg.id);
             setGuildSetting(guildId, "chatPlayEnabled", true);
 
+            const reply = new ContainerBuilder().setAccentColor(0xfacc15);
+            reply.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    "### ✅ ChatPlay Setup Complete\n\n" +
+                    "**Channel**\n" +
+                    `-# <#${interaction.channel.id}>\n\n` +
+                    "**How to use**\n" +
+                    "-# Just type a song name in this channel to play it!"
+                )
+            );
             await interaction.reply({
-                content: "✅ ChatPlay set up in this channel! Type a song name to play.",
-                flags: MessageFlags.Ephemeral,
+                components: [reply],
+                flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
             });
 
         } else if (sub === "enable") {
-            // --- ENABLE: turn on listening ---
             if (!guildData.chatPlayChannelId) {
                 return interaction.reply({
                     content: "❌ ChatPlay hasn't been set up yet. Use `/chatplay setup` first.",
@@ -79,13 +77,22 @@ module.exports = {
             guildData.chatPlayEnabled = true;
             setGuildSetting(guildId, "chatPlayEnabled", true);
 
+            const reply = new ContainerBuilder().setAccentColor(0xfacc15);
+            reply.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    "### ✅ ChatPlay Enabled\n\n" +
+                    "**Status**\n" +
+                    "-# Listening for song requests.\n\n" +
+                    "**Channel**\n" +
+                    `-# <#${guildData.chatPlayChannelId}>`
+                )
+            );
             await interaction.reply({
-                content: "✅ ChatPlay is now **enabled**. Type song names to play!",
-                flags: MessageFlags.Ephemeral,
+                components: [reply],
+                flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
             });
 
         } else if (sub === "disable") {
-            // --- DISABLE: stop listening but keep message ---
             if (!guildData.chatPlayChannelId) {
                 return interaction.reply({
                     content: "❌ ChatPlay is not set up in any channel.",
@@ -96,9 +103,19 @@ module.exports = {
             guildData.chatPlayEnabled = false;
             setGuildSetting(guildId, "chatPlayEnabled", false);
 
+            const reply = new ContainerBuilder().setAccentColor(0xfacc15);
+            reply.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    "### ⏸ ChatPlay Disabled\n\n" +
+                    "**Status**\n" +
+                    "-# Paused — the player message is kept.\n\n" +
+                    "**Resume**\n" +
+                    "-# Use `/chatplay enable` to start listening again."
+                )
+            );
             await interaction.reply({
-                content: "⏸ ChatPlay is now **disabled**. The message is kept — use `/chatplay enable` to resume.",
-                flags: MessageFlags.Ephemeral,
+                components: [reply],
+                flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
             });
         }
     },

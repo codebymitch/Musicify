@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
 
 module.exports = {
@@ -40,15 +40,12 @@ module.exports = {
         player.setVolume(guildData.volume);
 
         try {
-            const isUrl = /^https?:\/\//.test(query);
             const result = await client.riffy.resolve({
                 query: query,
                 requester: interaction.user,
             });
 
             const { loadType, tracks, playlistInfo } = result;
-
-
 
             // Handle all Lavalink v3 + v4 loadType variants
             if (
@@ -59,9 +56,22 @@ module.exports = {
                     track.info.requester = interaction.user;
                     player.queue.add(track);
                 }
+
+                const container = new ContainerBuilder().setAccentColor(0xfacc15);
+                container.addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        "### ✅ Playlist Added\n\n" +
+                        "**Playlist**\n" +
+                        `-# ${playlistInfo.name}\n\n` +
+                        "**Tracks**\n" +
+                        `-# ${tracks.length} songs added to queue`
+                    )
+                );
                 await interaction.editReply({
-                    content: `✅ Added **${tracks.length} tracks** from **${playlistInfo.name}**`,
+                    components: [container],
+                    flags: MessageFlags.IsComponentsV2,
                 });
+
                 if (!player.playing && !player.paused && !player.current) player.play();
             } else if (
                 loadType === "search" ||
@@ -75,9 +85,24 @@ module.exports = {
                 }
                 track.info.requester = interaction.user;
                 player.queue.add(track);
+
+                const container = new ContainerBuilder().setAccentColor(0xfacc15);
+                container.addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        "### ✅ Track Added\n\n" +
+                        "**Title**\n" +
+                        `-# ${track.info.title}\n\n` +
+                        "**Artist**\n" +
+                        `-# ${track.info.author}\n\n` +
+                        "**Position**\n" +
+                        `-# #${player.queue.length} in queue`
+                    )
+                );
                 await interaction.editReply({
-                    content: `✅ Added **${track.info.title}** by **${track.info.author}**`,
+                    components: [container],
+                    flags: MessageFlags.IsComponentsV2,
                 });
+
                 if (!player.playing && !player.paused && !player.current) player.play();
             } else {
                 console.log(`[Musicify] Unhandled loadType: "${loadType}"`);

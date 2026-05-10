@@ -4,6 +4,9 @@ const {
     AttachmentBuilder,
     ContainerBuilder,
     TextDisplayBuilder,
+    SeparatorBuilder,
+    SectionBuilder,
+    ThumbnailBuilder,
     MediaGalleryBuilder,
     MediaGalleryItemBuilder,
     ActionRowBuilder,
@@ -30,7 +33,7 @@ module.exports = {
             name: "M_Banner.png",
         });
 
-        // ─── Container 1: Banner + Description ───
+        // ─── Container 1: Banner + About ───
         const container1 = new ContainerBuilder().setAccentColor(0xfacc15);
 
         container1.addMediaGalleryComponents(
@@ -41,18 +44,51 @@ module.exports = {
 
         container1.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "Musicify is a premium multi-guild Discord music bot built to deliver high-quality music streaming directly to your voice channels. Powered by discord.js, Riffy, and Musicard, it offers seamless playback with rich now-playing cards, 10+ audio filter presets, smart queue management, ChatPlay mode for instant song requests, and an intuitive button-based control interface — all brought to you by TouchPoint and a passionate team of developers dedicated to creating the best music experience on Discord."
+                "### 🎧 About Musicify\n" +
+                "-# Your premium music companion for Discord."
             )
         );
 
-        // ─── Container 2: Team + Buttons ───
+        container1.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+
+        container1.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                "**What is Musicify?**\n" +
+                "-# A premium multi-guild Discord music bot built to deliver\n" +
+                "-# high-quality music streaming directly to your voice channels.\n\n" +
+                "**Powered By**\n" +
+                "-# discord.js · Riffy · Musicard\n\n" +
+                "**Features**\n" +
+                "-# 🎶 Rich now-playing cards with progress bars\n" +
+                "-# 🎛️ 10+ audio filter presets\n" +
+                "-# 📜 Smart queue management with pagination\n" +
+                "-# 💬 ChatPlay — instant song requests\n" +
+                "-# 🎮 Interactive button-based controls"
+            )
+        );
+
+        // ─── Container 2: Team + Links ───
         const container2 = new ContainerBuilder().setAccentColor(0xfacc15);
 
         container2.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "**Team**\n\n**codebymitch**\n**ramsquishna**"
+                "### 👥 Team\n" +
+                "-# Built by TouchPoint and a passionate team of developers."
             )
         );
+
+        container2.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+
+        container2.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                "**codebymitch**\n" +
+                "-# Lead Developer\n\n" +
+                "**ramsquishna**\n" +
+                "-# Developer"
+            )
+        );
+
+        container2.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()

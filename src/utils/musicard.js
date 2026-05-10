@@ -1,4 +1,5 @@
 const { initializeFonts, Bloom } = require("musicard");
+const config = require("../../config");
 
 let fontsInitialized = false;
 
@@ -16,6 +17,8 @@ async function generateMusicCard(track, player, guildData) {
         const position = player.position || 0;
         const progress = duration > 0 ? Math.floor((position / duration) * 100) : 0;
 
+        const musicardConfig = config.musicard || {};
+
         const card = await Bloom({
             trackName: (track.info.title || "Unknown").substring(0, 40),
             artistName: (track.info.author || "Unknown Artist").substring(0, 30),
@@ -26,6 +29,8 @@ async function generateMusicCard(track, player, guildData) {
             },
             progressBar: Math.min(Math.max(progress, 0), 100),
             volumeBar: guildData.volume || 75,
+            progressBarColor: musicardConfig.progressBarColor || "#FACC15",
+            backgroundColor: musicardConfig.backgroundColor || "#2b2d31",
         });
 
         return card;

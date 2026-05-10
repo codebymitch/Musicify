@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, MessageFlags, AttachmentBuilder } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags, AttachmentBuilder, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
-const { createNowPlayingContainer } = require("../utils/components");
+const { createNowPlayingContainer, formatDuration } = require("../utils/components");
 const { generateMusicCard } = require("../utils/musicard");
 
 module.exports = {
@@ -11,9 +11,17 @@ module.exports = {
     async execute(interaction, client) {
         const player = client.riffy.players.get(interaction.guild.id);
         if (!player || !player.current) {
+            const container = new ContainerBuilder().setAccentColor(0xfacc15);
+            container.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    "### 🎶 Now Playing\n\n" +
+                    "**Status**\n" +
+                    "-# Nothing is playing right now."
+                )
+            );
             return interaction.reply({
-                content: "❌ Nothing is playing right now.",
-                flags: MessageFlags.Ephemeral,
+                components: [container],
+                flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
             });
         }
 

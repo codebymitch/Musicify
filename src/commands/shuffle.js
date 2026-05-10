@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -29,9 +29,18 @@ module.exports = {
         }
 
         player.queue.shuffle();
+
+        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                "### 🔀 Shuffled\n\n" +
+                "**Tracks**\n" +
+                `-# ${player.queue.length} songs randomized`
+            )
+        );
         await interaction.reply({
-            content: `🔀 Shuffled **${player.queue.length}** tracks!`,
-            flags: MessageFlags.Ephemeral,
+            components: [container],
+            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
         });
     },
 };

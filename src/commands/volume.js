@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
 
 module.exports = {
@@ -8,7 +8,7 @@ module.exports = {
         .addIntegerOption((opt) =>
             opt
                 .setName("level")
-                .setDescription("Volume level (0-150)")
+                .setDescription("Volume level (0-100)")
                 .setRequired(true)
                 .setMinValue(0)
                 .setMaxValue(100)
@@ -36,9 +36,23 @@ module.exports = {
         guildData.volume = level;
         player.setVolume(level);
 
+        // Build a simple volume bar
+        const filled = Math.round(level / 10);
+        const bar = "█".repeat(filled) + "░".repeat(10 - filled);
+
+        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                "### 🔊 Volume Updated\n\n" +
+                "**Level**\n" +
+                `-# ${level}%\n\n` +
+                "**Volume**\n" +
+                `-# ${bar}`
+            )
+        );
         await interaction.reply({
-            content: `🔊 Volume set to **${level}%**`,
-            flags: MessageFlags.Ephemeral,
+            components: [container],
+            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
         });
     },
 };

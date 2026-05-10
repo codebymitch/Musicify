@@ -38,7 +38,7 @@ async function editOrSendPlayerMessage(client, guildData, channelId, container, 
             guildData.playerChannelId = null;
             guildData.updateInterval && clearInterval(guildData.updateInterval);
             guildData.updateInterval = null;
-}
+        }
     }
 
     try {
@@ -86,7 +86,7 @@ async function refreshPlayerMessage(client, guildId) {
 }
 
 /**
- * Start the 15-minute auto-update interval for a guild
+ * Start the 15-second auto-update interval for a guild
  */
 function startUpdateInterval(client, guildId) {
     const guildData = getGuildData(guildId);
@@ -127,6 +127,15 @@ function setupPlayerHandler(client) {
         try {
             const guildData = getGuildData(player.guildId);
 
+            // Save the previous track for the "Previous" button
+            if (player.previous) {
+                guildData.previousTracks.push(player.previous);
+                // Keep history limited to 20 tracks to prevent memory bloat
+                if (guildData.previousTracks.length > 20) {
+                    guildData.previousTracks.shift();
+                }
+            }
+
             // Clear any idle timeout
             if (guildData.idleTimeout) {
                 clearTimeout(guildData.idleTimeout);
@@ -149,7 +158,7 @@ function setupPlayerHandler(client) {
             const channelId = guildData.chatPlayChannelId || guildData.playerChannelId || player.textChannel;
             await editOrSendPlayerMessage(client, guildData, channelId, container, files);
 
-            // Start 15-minute auto-update interval
+            // Start 15-second auto-update interval
             startUpdateInterval(client, player.guildId);
 
             // Fetch suggestions for the dropdown

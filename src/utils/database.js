@@ -3,10 +3,13 @@ const path = require("path");
 
 const DB_PATH = path.join(__dirname, "..", "..", "data", "guilds.json");
 
+let dbInitialized = false;
+
 /**
- * Ensure the data directory and file exist
+ * Ensure the data directory and file exist (only runs once)
  */
 function ensureDB() {
+    if (dbInitialized) return;
     const dir = path.dirname(DB_PATH);
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -14,6 +17,7 @@ function ensureDB() {
     if (!fs.existsSync(DB_PATH)) {
         fs.writeFileSync(DB_PATH, "{}", "utf-8");
     }
+    dbInitialized = true;
 }
 
 /**

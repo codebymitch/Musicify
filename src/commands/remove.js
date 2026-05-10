@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -39,9 +39,21 @@ module.exports = {
         const removed = player.queue.splice(pos - 1, 1);
         const trackName = removed[0]?.info?.title || "Unknown";
 
+        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                "### 🗑️ Track Removed\n\n" +
+                "**Track**\n" +
+                `-# ${trackName}\n\n` +
+                "**Was at**\n" +
+                `-# Position #${pos}\n\n` +
+                "**Queue**\n" +
+                `-# ${player.queue.length} track(s) remaining`
+            )
+        );
         await interaction.reply({
-            content: `🗑️ Removed **${trackName}** from position **${pos}**`,
-            flags: MessageFlags.Ephemeral,
+            components: [container],
+            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
         });
     },
 };

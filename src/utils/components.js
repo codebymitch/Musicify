@@ -55,12 +55,15 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
     // --- Separator ---
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
-    // --- Status: Autoplay / Loop / Volume (subtext) ---
+    // --- Status: Autoplay / Loop / Volume ---
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            `-# Autoplay: ${guildData.autoplay ? "On" : "Off"}\n` +
-            `-# Loop: ${capitalize(guildData.loop)}\n` +
-            `-# Volume: ${guildData.volume}%`
+            "**Autoplay**\n" +
+            `-# ${guildData.autoplay ? "On" : "Off"}\n\n` +
+            "**Loop**\n" +
+            `-# ${capitalize(guildData.loop)}\n\n` +
+            "**Volume**\n" +
+            `-# ${guildData.volume}%`
         )
     );
 
@@ -69,18 +72,23 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
 
     // --- Next on Deck ---
     const queue = player.queue;
-    let nextText = "-# *No upcoming tracks*";
+    let nextContent = "**Next on Deck**\n";
     if (queue && queue.length > 0) {
         const upcoming = queue.slice(0, 3);
-        nextText = upcoming
-            .map((t, i) => `-# **${i + 1}.** ${t.info.title} — ${t.info.author}`)
-            .join("\n");
-        if (queue.length > 3) {
-            nextText += `\n-# *...and ${queue.length - 3} more*`;
+        nextContent += "\n";
+        for (let i = 0; i < upcoming.length; i++) {
+            const t = upcoming[i];
+            nextContent += `**${i + 1}.** ${(t.info.title || "Unknown").substring(0, 45)}\n`;
+            nextContent += `-# ${(t.info.author || "Unknown Artist").substring(0, 30)} · ${formatDuration(t.info.length)}\n\n`;
         }
+        if (queue.length > 3) {
+            nextContent += `-# *...and ${queue.length - 3} more in queue*`;
+        }
+    } else {
+        nextContent += "-# *No upcoming tracks*";
     }
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`**Next on Deck**\n${nextText}`)
+        new TextDisplayBuilder().setContent(nextContent.trim())
     );
 
     // --- Musicard image ---
@@ -120,23 +128,23 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
     const row1 = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId("shuffle")
-            .setEmoji("<:shuffle:1481532332543574137>")
+            .setEmoji("🔀")
             .setStyle(guildData.shuffle ? ButtonStyle.Primary : ButtonStyle.Secondary),
         new ButtonBuilder()
             .setCustomId("previous")
-            .setEmoji("<:angledoubleleft:1481532339459854386>")
+            .setEmoji("⏮️")
             .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
             .setCustomId("pause_resume")
-            .setEmoji(isPaused ? "<:play:1481532344920834130>" : "<:pause:1481532336679030815>")
+            .setEmoji(isPaused ? "▶️" : "⏸️")
             .setStyle(isPaused ? ButtonStyle.Success : ButtonStyle.Secondary),
         new ButtonBuilder()
             .setCustomId("skip")
-            .setEmoji("<:angledoubleright:1481532342542663841>")
+            .setEmoji("⏭️")
             .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
             .setCustomId("loop")
-            .setEmoji("<:loopsquare:1481532334808371311>")
+            .setEmoji("🔁")
             .setStyle(guildData.loop !== "none" ? ButtonStyle.Primary : ButtonStyle.Secondary)
     );
 
@@ -144,23 +152,23 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
     const row2 = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId("autoplay")
-            .setEmoji("<:streaming:1481532239035633756>")
+            .setEmoji("📻")
             .setStyle(guildData.autoplay ? ButtonStyle.Primary : ButtonStyle.Secondary),
         new ButtonBuilder()
             .setCustomId("vol_down")
-            .setEmoji("<:volumedown:1481532227467608138>")
+            .setEmoji("🔉")
             .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
             .setCustomId("stop")
-            .setEmoji("<:stop:1481571774234628096>")
+            .setEmoji("⏹️")
             .setStyle(ButtonStyle.Danger),
         new ButtonBuilder()
             .setCustomId("vol_up")
-            .setEmoji("<:volume:1481532229623484487>")
+            .setEmoji("🔊")
             .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
             .setCustomId("queue")
-            .setEmoji("<:documentwriter:1481532241136844984>")
+            .setEmoji("📜")
             .setStyle(ButtonStyle.Secondary)
     );
 
@@ -168,43 +176,7 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
     return container;
 }
 
-/**
- * Create the "Idle / Queue Ended" container
- */
-function createIdleContainer() {
-    const container = new ContainerBuilder().setAccentColor(0x2b2d31);
 
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            "### 🎶 Queue Ended\n-# *No more tracks left in the queue.*"
-        )
-    );
-
-    // Idle image
-    container.addMediaGalleryComponents(
-        new MediaGalleryBuilder().addItems(
-            new MediaGalleryItemBuilder().setURL("attachment://idle.png")
-        )
-    );
-
-    // Minimal buttons
-    const row1 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId("pause_resume").setEmoji("<:pause:1481532336679030815>").setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId("vol_down").setEmoji("<:volumedown:1481532227467608138>").setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId("vol_up").setEmoji("<:volume:1481532229623484487>").setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId("loop").setEmoji("<:loopsquare:1481532334808371311>").setStyle(ButtonStyle.Secondary)
-    );
-
-    const row2 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId("stop").setEmoji("<:stop:1481571774234628096>").setStyle(ButtonStyle.Danger),
-        new ButtonBuilder().setCustomId("skip").setEmoji("<:angledoubleright:1481532342542663841>").setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId("autoplay").setEmoji("<:streaming:1481532239035633756>").setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId("queue").setEmoji("<:documentwriter:1481532241136844984>").setStyle(ButtonStyle.Secondary)
-    );
-
-    container.addActionRowComponents(row1, row2);
-    return container;
-}
 
 /**
  * Create a ChatPlay idle container (no image, disabled buttons)
@@ -230,19 +202,19 @@ function createChatPlayIdleContainer() {
 
     // Disabled control buttons
     const row1 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId("shuffle").setEmoji("<:shuffle:1481532332543574137>").setStyle(ButtonStyle.Secondary).setDisabled(true),
-        new ButtonBuilder().setCustomId("previous").setEmoji("<:angledoubleleft:1481532339459854386>").setStyle(ButtonStyle.Secondary).setDisabled(true),
-        new ButtonBuilder().setCustomId("pause_resume").setEmoji("<:pause:1481532336679030815>").setStyle(ButtonStyle.Secondary).setDisabled(true),
-        new ButtonBuilder().setCustomId("skip").setEmoji("<:angledoubleright:1481532342542663841>").setStyle(ButtonStyle.Secondary).setDisabled(true),
-        new ButtonBuilder().setCustomId("loop").setEmoji("<:loopsquare:1481532334808371311>").setStyle(ButtonStyle.Secondary).setDisabled(true)
+        new ButtonBuilder().setCustomId("shuffle").setEmoji("🔀").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("previous").setEmoji("⏮️").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("pause_resume").setEmoji("⏸️").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("skip").setEmoji("⏭️").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("loop").setEmoji("🔁").setStyle(ButtonStyle.Secondary).setDisabled(true)
     );
 
     const row2 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId("autoplay").setEmoji("<:streaming:1481532239035633756>").setStyle(ButtonStyle.Secondary).setDisabled(true),
-        new ButtonBuilder().setCustomId("vol_down").setEmoji("<:volumedown:1481532227467608138>").setStyle(ButtonStyle.Secondary).setDisabled(true),
-        new ButtonBuilder().setCustomId("stop").setEmoji("<:stop:1481571774234628096>").setStyle(ButtonStyle.Danger).setDisabled(true),
-        new ButtonBuilder().setCustomId("vol_up").setEmoji("<:volume:1481532229623484487>").setStyle(ButtonStyle.Secondary).setDisabled(true),
-        new ButtonBuilder().setCustomId("queue").setEmoji("<:documentwriter:1481532241136844984>").setStyle(ButtonStyle.Secondary).setDisabled(true)
+        new ButtonBuilder().setCustomId("autoplay").setEmoji("📻").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("vol_down").setEmoji("🔉").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("stop").setEmoji("⏹️").setStyle(ButtonStyle.Danger).setDisabled(true),
+        new ButtonBuilder().setCustomId("vol_up").setEmoji("🔊").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("queue").setEmoji("📜").setStyle(ButtonStyle.Secondary).setDisabled(true)
     );
 
     container.addActionRowComponents(row1, row2);
@@ -263,7 +235,7 @@ function createQueueContainer(queue, currentTrack, page = 0) {
     if (page < 0) page = 0;
     if (page >= totalPages) page = totalPages - 1;
 
-    // --- Header ---
+    // --- Total duration ---
     let totalDuration = 0;
     if (currentTrack && currentTrack.info.length) totalDuration += currentTrack.info.length;
     if (queue && queue.length > 0) {
@@ -272,6 +244,7 @@ function createQueueContainer(queue, currentTrack, page = 0) {
         }
     }
 
+    // --- Header ---
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
             `### 📜 Queue\n` +
@@ -285,28 +258,32 @@ function createQueueContainer(queue, currentTrack, page = 0) {
     if (currentTrack) {
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `**🎶 Now Playing**\n` +
-                `-# **${currentTrack.info.title}**\n` +
-                `-# ${currentTrack.info.author} · ${formatDuration(currentTrack.info.length)}`
+                "**🎶 Now Playing**\n\n" +
+                `**${(currentTrack.info.title || "Unknown").substring(0, 50)}**\n` +
+                `-# ${(currentTrack.info.author || "Unknown Artist").substring(0, 30)} · ${formatDuration(currentTrack.info.length)}`
             )
         );
         container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
     }
 
-    // --- Queue tracks ---
+    // --- Queue tracks (numbered like Command Browser) ---
     if (!queue || queue.length === 0) {
         container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent("-# *No upcoming tracks in queue*")
+            new TextDisplayBuilder().setContent(
+                "**Up Next**\n\n" +
+                "-# *No upcoming tracks in queue*"
+            )
         );
     } else {
         const start = page * pageSize;
         const end = Math.min(start + pageSize, queue.length);
 
-        let queueText = "**Up Next**\n";
+        let queueText = "**Up Next**\n\n";
         for (let i = start; i < end; i++) {
             const t = queue[i];
             const duration = formatDuration(t.info.length);
-            queueText += `-# **${i + 1}.** ${(t.info.title || "Unknown").substring(0, 45)} — *${(t.info.author || "?").substring(0, 25)}* \`${duration}\`\n`;
+            queueText += `**${i + 1}.** ${(t.info.title || "Unknown").substring(0, 45)}\n`;
+            queueText += `-# ${(t.info.author || "?").substring(0, 25)} · \`${duration}\`\n\n`;
         }
 
         container.addTextDisplayComponents(
@@ -314,13 +291,13 @@ function createQueueContainer(queue, currentTrack, page = 0) {
         );
     }
 
-    // --- Footer + Pagination buttons ---
+    // --- Pagination ---
     if (totalPages > 1) {
         container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `-# Page ${page + 1} of ${totalPages}`
+                `-# Page ${page + 1} of ${totalPages} · ${totalTracks} tracks`
             )
         );
 
@@ -365,7 +342,6 @@ function capitalize(str) {
 
 module.exports = {
     createNowPlayingContainer,
-    createIdleContainer,
     createChatPlayIdleContainer,
     createQueueContainer,
     formatDuration,
