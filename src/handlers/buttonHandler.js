@@ -7,6 +7,10 @@ const { generateMusicCard } = require("../utils/musicard");
  * Handle all button and select menu interactions from the player container
  */
 async function handleButtonInteraction(client, interaction) {
+    if (!client.riffy) {
+        console.warn('[Musicify] Riffy client not initialized; button handler ignored.');
+        return;
+    }
     const guildId = interaction.guild.id;
     const player = client.riffy.players.get(guildId);
     const guildData = getGuildData(guildId);
