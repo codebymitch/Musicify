@@ -1,0 +1,4 @@
+node_modules/
+.env
+data/
+MESSAGE_CONTENT_INTENT.md
