@@ -41,7 +41,7 @@ module.exports = {
         const labels = { none: "Off", track: "Track", queue: "Queue" };
         const emojis = { none: "➡️", track: "🔂", queue: "🔁" };
 
-        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 `### ${emojis[mode]} Loop Updated\n\n` +

@@ -59,7 +59,7 @@ module.exports = {
 
         player.seek(ms);
 
-        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 "### ⏩ Seeked\n\n" +

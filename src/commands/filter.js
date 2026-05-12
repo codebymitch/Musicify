@@ -47,7 +47,7 @@ module.exports = {
 
         if (preset === "reset") {
             player.filters.clearFilters();
-            const container = new ContainerBuilder().setAccentColor(0xfacc15);
+            const container = new ContainerBuilder();
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
                     "### ❌ Filters Reset\n\n" +
@@ -76,7 +76,7 @@ module.exports = {
             });
         }
 
-        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 `### ${filter.emoji} Filter Applied\n\n` +

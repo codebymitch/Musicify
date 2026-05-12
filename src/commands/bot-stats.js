@@ -16,7 +16,7 @@ module.exports = {
     async execute(interaction, client) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        const container = new ContainerBuilder();
 
         // --- Header with bot avatar ---
         const header = new SectionBuilder()

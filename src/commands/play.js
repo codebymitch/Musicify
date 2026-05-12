@@ -57,7 +57,7 @@ module.exports = {
                     player.queue.add(track);
                 }
 
-                const container = new ContainerBuilder().setAccentColor(0xfacc15);
+                const container = new ContainerBuilder();
                 container.addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(
                         "### ✅ Playlist Added\n\n" +
@@ -86,7 +86,7 @@ module.exports = {
                 track.info.requester = interaction.user;
                 player.queue.add(track);
 
-                const container = new ContainerBuilder().setAccentColor(0xfacc15);
+                const container = new ContainerBuilder();
                 container.addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(
                         "### ✅ Track Added\n\n" +

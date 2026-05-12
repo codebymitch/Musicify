@@ -41,7 +41,7 @@ module.exports = {
             ? "Active — I'll stay in the voice channel."
             : "Inactive — I'll leave when the queue is empty.";
 
-        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 `### ${emoji} 24/7 Mode ${label}\n\n` +

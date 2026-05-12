@@ -51,7 +51,7 @@ module.exports = {
             setGuildSetting(guildId, "chatPlayMessageId", chatMsg.id);
             setGuildSetting(guildId, "chatPlayEnabled", true);
 
-            const reply = new ContainerBuilder().setAccentColor(0xfacc15);
+            const reply = new ContainerBuilder();
             reply.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
                     "### ✅ ChatPlay Setup Complete\n\n" +
@@ -77,7 +77,7 @@ module.exports = {
             guildData.chatPlayEnabled = true;
             setGuildSetting(guildId, "chatPlayEnabled", true);
 
-            const reply = new ContainerBuilder().setAccentColor(0xfacc15);
+            const reply = new ContainerBuilder();
             reply.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
                     "### ✅ ChatPlay Enabled\n\n" +
@@ -103,7 +103,7 @@ module.exports = {
             guildData.chatPlayEnabled = false;
             setGuildSetting(guildId, "chatPlayEnabled", false);
 
-            const reply = new ContainerBuilder().setAccentColor(0xfacc15);
+            const reply = new ContainerBuilder();
             reply.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
                     "### ⏸ ChatPlay Disabled\n\n" +

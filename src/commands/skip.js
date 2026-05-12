@@ -24,7 +24,7 @@ module.exports = {
         const skippedTitle = player.current?.info?.title || "Unknown";
         player.stop();
 
-        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 "### ⏭ Skipped\n\n" +

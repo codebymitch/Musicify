@@ -56,7 +56,7 @@ module.exports = {
         const [track] = player.queue.splice(from - 1, 1);
         player.queue.splice(to - 1, 0, track);
 
-        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 "### ↕️ Track Moved\n\n" +

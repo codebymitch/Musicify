@@ -34,7 +34,7 @@ module.exports = {
         });
 
         // ─── Container 1: Banner + About ───
-        const container1 = new ContainerBuilder().setAccentColor(0xfacc15);
+        const container1 = new ContainerBuilder();
 
         container1.addMediaGalleryComponents(
             new MediaGalleryBuilder().addItems(
@@ -68,7 +68,7 @@ module.exports = {
         );
 
         // ─── Container 2: Team + Links ───
-        const container2 = new ContainerBuilder().setAccentColor(0xfacc15);
+        const container2 = new ContainerBuilder();
 
         container2.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(

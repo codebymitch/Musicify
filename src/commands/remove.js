@@ -39,7 +39,7 @@ module.exports = {
         const removed = player.queue.splice(pos - 1, 1);
         const trackName = removed[0]?.info?.title || "Unknown";
 
-        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 "### 🗑️ Track Removed\n\n" +

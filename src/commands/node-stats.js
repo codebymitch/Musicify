@@ -26,7 +26,7 @@ module.exports = {
                 : Object.values(nodes || {});
 
         if (!nodeList || nodeList.length === 0) {
-            const container = new ContainerBuilder().setAccentColor(0xfacc15);
+            const container = new ContainerBuilder();
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
                     "### 🔗 Lavalink Node Stats\n" +
@@ -41,7 +41,7 @@ module.exports = {
 
         // Build dropdown if multiple nodes
         if (nodeList.length > 1) {
-            const container = new ContainerBuilder().setAccentColor(0xfacc15);
+            const container = new ContainerBuilder();
 
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
@@ -83,7 +83,7 @@ module.exports = {
         }
 
         // Single node — show directly
-        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 "### 🔗 Lavalink Node Stats\n" +

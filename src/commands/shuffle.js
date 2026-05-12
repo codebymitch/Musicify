@@ -30,7 +30,7 @@ module.exports = {
 
         player.queue.shuffle();
 
-        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 "### 🔀 Shuffled\n\n" +

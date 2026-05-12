@@ -40,7 +40,7 @@ module.exports = {
         const filled = Math.round(level / 10);
         const bar = "█".repeat(filled) + "░".repeat(10 - filled);
 
-        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 "### 🔊 Volume Updated\n\n" +

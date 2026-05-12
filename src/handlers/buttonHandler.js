@@ -36,7 +36,7 @@ async function handleButtonInteraction(client, interaction) {
         // Rebuild the container with selected node's details
         const { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require("discord.js");
 
-        const container = new ContainerBuilder().setAccentColor(0xfacc15);
+        const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 "### 🔗 Lavalink Node Stats\n" +

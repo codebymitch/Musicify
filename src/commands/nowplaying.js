@@ -11,7 +11,7 @@ module.exports = {
     async execute(interaction, client) {
         const player = client.riffy.players.get(interaction.guild.id);
         if (!player || !player.current) {
-            const container = new ContainerBuilder().setAccentColor(0xfacc15);
+            const container = new ContainerBuilder();
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
                     "### 🎶 Now Playing\n\n" +

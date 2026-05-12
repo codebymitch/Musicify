@@ -29,7 +29,7 @@ function formatDuration(ms) {
  * Design matches the example screenshot with -# subtext
  */
 function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
-    const container = new ContainerBuilder().setAccentColor(0xfacc15);
+    const container = new ContainerBuilder();
 
     // --- Now Playing header + track info with thumbnail ---
     const section = new SectionBuilder()
@@ -181,7 +181,7 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
  * Create a ChatPlay idle container (no image, disabled buttons)
  */
 function createChatPlayIdleContainer() {
-    const container = new ContainerBuilder().setAccentColor(0xfacc15);
+    const container = new ContainerBuilder();
 
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
@@ -225,7 +225,7 @@ function createChatPlayIdleContainer() {
  * Create queue display container with pagination
  */
 function createQueueContainer(queue, currentTrack, page = 0) {
-    const container = new ContainerBuilder().setAccentColor(0xfacc15);
+    const container = new ContainerBuilder();
     const pageSize = 10;
     const totalTracks = queue ? queue.length : 0;
     const totalPages = Math.max(1, Math.ceil(totalTracks / pageSize));

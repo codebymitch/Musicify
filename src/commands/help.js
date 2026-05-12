@@ -78,7 +78,7 @@ function buildDropdown(activePage = "home") {
  * Build the full container for a given page
  */
 function buildHelpPage(client, page = "home") {
-    const container = new ContainerBuilder().setAccentColor(0xfacc15);
+    const container = new ContainerBuilder();
 
     // --- Header with bot avatar ---
     const section = new SectionBuilder()
@@ -446,7 +446,7 @@ function addSupportPage(container) {
  * Build the banner container (separate from the help content)
  */
 function buildBannerContainer() {
-    const banner = new ContainerBuilder().setAccentColor(0xfacc15);
+    const banner = new ContainerBuilder();
     banner.addMediaGalleryComponents(
         new MediaGalleryBuilder().addItems(
             new MediaGalleryItemBuilder().setURL("attachment://M_Banner.png")
