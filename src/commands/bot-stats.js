@@ -58,7 +58,6 @@ module.exports = {
         // --- General ---
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "**General**\n" +
                 "**Bot ID**\n" +
                 `-# ${client.user.id}\n\n` +
                 "**Uptime**\n" +
@@ -75,7 +74,6 @@ module.exports = {
         // --- Servers & Players ---
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "**Servers & Players**\n" +
                 "**Guilds**\n" +
                 `-# ${totalGuilds.toLocaleString()}\n\n` +
                 "**Users**\n" +
@@ -94,7 +92,6 @@ module.exports = {
         // --- Memory ---
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "**Memory**\n" +
                 "**Heap Used**\n" +
                 `-# ${memUsed} MB\n\n` +
                 "**Heap Total**\n" +
