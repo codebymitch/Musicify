@@ -469,7 +469,7 @@ module.exports = {
         await interaction.reply({
             components: [bannerContainer, container],
             files: [bannerAttachment],
-            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+            flags: MessageFlags.IsComponentsV2,
         });
     },
 

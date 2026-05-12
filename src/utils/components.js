@@ -72,10 +72,9 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
 
     // --- Next on Deck ---
     const queue = player.queue;
-    let nextContent = "**Next on Deck**\n";
+    let nextContent = "**Next on Deck**\n\n";
     if (queue && queue.length > 0) {
         const upcoming = queue.slice(0, 3);
-        nextContent += "\n";
         for (let i = 0; i < upcoming.length; i++) {
             const t = upcoming[i];
             nextContent += `**${i + 1}.** ${(t.info.title || "Unknown").substring(0, 45)}\n`;
