@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  musicify:
+    build: .
+    container_name: musicify
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - BOT_TOKEN
+      - CLIENT_ID
+    networks:
+      - musicify-network
+
+networks:
+  musicify-network:
+    driver: bridge
