@@ -59,11 +59,11 @@ module.exports = {
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 "**Bot ID**\n" +
-                `-# ${client.user.id}\n\n` +
+                `-# ${client.user.id}\n` +
                 "**Uptime**\n" +
-                `-# ${uptimeStr}\n\n` +
+                `-# ${uptimeStr}\n` +
                 "**Ping**\n" +
-                `-# ${client.ws.ping}ms\n\n` +
+                `-# ${client.ws.ping}ms\n` +
                 "**Runtime**\n" +
                 `-# Node.js ${process.version} · discord.js v${require("discord.js").version}`
             )
@@ -75,13 +75,13 @@ module.exports = {
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 "**Guilds**\n" +
-                `-# ${totalGuilds.toLocaleString()}\n\n` +
+                `-# ${totalGuilds.toLocaleString()}\n` +
                 "**Users**\n" +
-                `-# ${totalUsers.toLocaleString()}\n\n` +
+                `-# ${totalUsers.toLocaleString()}\n` +
                 "**Channels**\n" +
-                `-# ${totalChannels.toLocaleString()}\n\n` +
+                `-# ${totalChannels.toLocaleString()}\n` +
                 "**Active Players**\n" +
-                `-# ${activePlayers}\n\n` +
+                `-# ${activePlayers}\n` +
                 "**Lavalink Nodes**\n" +
                 `-# ${totalNodes}`
             )
@@ -93,9 +93,9 @@ module.exports = {
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 "**Heap Used**\n" +
-                `-# ${memUsed} MB\n\n` +
+                `-# ${memUsed} MB\n` +
                 "**Heap Total**\n" +
-                `-# ${memTotal} MB\n\n` +
+                `-# ${memTotal} MB\n` +
                 "**RSS**\n" +
                 `-# ${memRSS} MB`
             )

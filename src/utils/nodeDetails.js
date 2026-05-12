@@ -18,9 +18,9 @@ function addNodeDetails(container, node, index) {
         new TextDisplayBuilder().setContent(
             `### ${statusEmoji} ${node.name || `Node ${index + 1}`}\n\n` +
             "**Status**\n" +
-            `-# ${statusText}\n\n` +
+            `-# ${statusText}\n` +
             "**Secure**\n" +
-            `-# ${node.secure ? "Yes (SSL)" : "No"}\n\n` +
+            `-# ${node.secure ? "Yes (SSL)" : "No"}\n` +
             "**Rest Version**\n" +
             `-# ${node.restVersion || "N/A"}`
         )
@@ -42,7 +42,7 @@ function addNodeDetails(container, node, index) {
         new TextDisplayBuilder().setContent(
             "**Players**\n\n" +
             "**Active**\n" +
-            `-# 🎶 ${stats.playingPlayers || 0}\n\n` +
+            `-# 🎶 ${stats.playingPlayers || 0}\n` +
             "**Total**\n" +
             `-# 📻 ${stats.players || 0}`
         )
@@ -55,9 +55,9 @@ function addNodeDetails(container, node, index) {
     if (stats.cpu) {
         cpuContent +=
             "**Cores**\n" +
-            `-# 🖥️ ${stats.cpu.cores || "N/A"}\n\n` +
+            `-# 🖥️ ${stats.cpu.cores || "N/A"}\n` +
             "**System Load**\n" +
-            `-# ⚙️ ${(stats.cpu.systemLoad * 100).toFixed(1)}%\n\n` +
+            `-# ⚙️ ${(stats.cpu.systemLoad * 100).toFixed(1)}%\n` +
             "**Lavalink Load**\n" +
             `-# 🔧 ${(stats.cpu.lavalinkLoad * 100).toFixed(1)}%`;
     } else {
@@ -77,11 +77,11 @@ function addNodeDetails(container, node, index) {
         const reservable = (stats.memory.reservable / 1024 / 1024).toFixed(1);
         memContent +=
             "**Used**\n" +
-            `-# 💾 ${used} MB\n\n` +
+            `-# 💾 ${used} MB\n` +
             "**Free**\n" +
-            `-# 🆓 ${free} MB\n\n` +
+            `-# 🆓 ${free} MB\n` +
             "**Allocated**\n" +
-            `-# 📦 ${allocated} MB\n\n` +
+            `-# 📦 ${allocated} MB\n` +
             "**Reservable**\n" +
             `-# 📊 ${reservable} MB`;
     } else {
@@ -102,15 +102,15 @@ function addNodeDetails(container, node, index) {
         const s = Math.floor(up % 60);
         sysContent +=
             "**Uptime**\n" +
-            `-# ⏱️ ${d}d ${h}h ${m}m ${s}s\n\n`;
+            `-# ⏱️ ${d}d ${h}h ${m}m ${s}s\n`;
     }
 
     if (stats.frameStats) {
         sysContent +=
             "**Frames Sent**\n" +
-            `-# 📤 ${stats.frameStats.sent || 0}\n\n` +
+            `-# 📤 ${stats.frameStats.sent || 0}\n` +
             "**Frames Nulled**\n" +
-            `-# ❌ ${stats.frameStats.nulled || 0}\n\n` +
+            `-# ❌ ${stats.frameStats.nulled || 0}\n` +
             "**Frames Deficit**\n" +
             `-# ⚠️ ${stats.frameStats.deficit || 0}`;
     } else {
