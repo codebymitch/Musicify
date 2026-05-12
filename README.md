@@ -1,7 +1,7 @@
 # ![Musicify Cover](/.github/assets/M_Banner.png)
 
-[![Support Server](https://img.shields.io/badge/-Support%20Server-%235865F2?logo=discord&logoColor=white&style=flat-square&logoWidth=20)](https://discord.gg/MRjEUhDCpZ)
 [![Invite Musicify](https://img.shields.io/badge/-Invite%20Musicify-111110?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIgMTZjNC04IDQgMiAxMCAwczQtMTAgMTAtNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkFDQzE1IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==&logoColor=white&style=flat-square&logoWidth=20)](OAuth invite link)
+[![Support Server](https://img.shields.io/badge/-Support%20Server-%235865F2?logo=discord&logoColor=white&style=flat-square&logoWidth=20)](https://discord.gg/MRjEUhDCpZ)
 
 ## Musicify
 
