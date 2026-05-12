@@ -27,6 +27,17 @@ async function handleChatPlayMessage(client, message) {
     const query = message.content.trim();
     if (!query) return false;
 
+    if (/(?:youtube\.com|youtu\.be)/i.test(query)) {
+        try {
+            await message.delete();
+            const warn = await message.channel.send({
+                content: "❌ YouTube links are currently not supported.",
+            });
+            setTimeout(() => warn.delete().catch(() => {}), 5000);
+        } catch (err) {}
+        return true;
+    }
+
     // Delete the user's message immediately
     try {
         await message.delete();

@@ -11,6 +11,12 @@ module.exports = {
 
     async execute(interaction, client) {
         const query = interaction.options.getString("query");
+        if (/(?:youtube\.com|youtu\.be)/i.test(query)) {
+            return interaction.reply({
+                content: "❌ YouTube links are currently not supported.",
+                flags: MessageFlags.Ephemeral,
+            });
+        }
         const member = interaction.member;
 
         if (!member.voice?.channel) {
