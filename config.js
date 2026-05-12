@@ -4,7 +4,7 @@ module.exports = {
             host: "localhost",
             password: "youshallnotpass",
             port: 443,
-            secure: true,
+            secure: false,
             name: "Main"
         }
     ],
