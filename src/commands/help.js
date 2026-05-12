@@ -165,7 +165,6 @@ function addHomePage(container) {
 }
 
 function addMusicPage(container) {
-    // Command browser header
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
             "### 🎶 Command Browser\n" +
@@ -175,58 +174,23 @@ function addMusicPage(container) {
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
-    // Playback commands — numbered like Image 1
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "**Playback**\n\n" +
-            "**1.** `/play <query>`\n" +
-            "-# Play a song or add it to the queue\n\n" +
-            "**2.** `/skip`\n" +
-            "-# Skip the current track\n\n" +
-            "**3.** `/stop`\n" +
-            "-# Stop playback, clear queue & disconnect\n\n" +
-            "**4.** `/nowplaying`\n" +
-            "-# Show the currently playing track with musicard\n\n" +
-            "**5.** `/seek <time>`\n" +
-            "-# Seek to a position *(e.g. 1:30 or 90)*"
-        )
-    );
-
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-    // Queue management
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            "**Queue Management**\n\n" +
-            "**6.** `/queue [page]`\n" +
-            "-# View the current queue with pagination\n\n" +
-            "**7.** `/remove <position>`\n" +
-            "-# Remove a track from the queue\n\n" +
-            "**8.** `/move <from> <to>`\n" +
-            "-# Move a track to a different position\n\n" +
-            "**9.** `/shuffle`\n" +
-            "-# Shuffle all tracks in the queue\n\n" +
-            "**10.** `/loop <off/track/queue>`\n" +
-            "-# Set loop mode for track or queue"
-        )
-    );
-
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-    // Settings
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            "**Settings**\n\n" +
-            "**11.** `/volume <0-100>`\n" +
-            "-# Set the playback volume\n\n" +
-            "**12.** `/247`\n" +
-            "-# Toggle 24/7 mode — stay in VC when idle\n\n" +
-            "**13.** `/filter <preset>`\n" +
-            "-# Apply an audio filter preset\n\n" +
-            "**14.** `/chatplay <setup/enable/disable>`\n" +
-            "-# Manage ChatPlay mode in a channel\n\n" +
-            "**15.** `/about`\n" +
-            "-# Learn more about Musicify"
+            "**1.** `/play <query>` — Play a song or add it to the queue\n\n" +
+            "**2.** `/skip` — Skip the current track\n\n" +
+            "**3.** `/stop` — Stop playback, clear queue & disconnect\n\n" +
+            "**4.** `/nowplaying` — Show the currently playing track\n\n" +
+            "**5.** `/seek <time>` — Seek to a position\n\n" +
+            "**6.** `/queue [page]` — View the current queue\n\n" +
+            "**7.** `/remove <pos>` — Remove a track from the queue\n\n" +
+            "**8.** `/move <from> <to>` — Move a track's position\n\n" +
+            "**9.** `/shuffle` — Shuffle all tracks in the queue\n\n" +
+            "**10.** `/loop <mode>` — Set loop mode for track or queue\n\n" +
+            "**11.** `/volume <0-100>` — Set the playback volume\n\n" +
+            "**12.** `/247` — Toggle 24/7 mode\n\n" +
+            "**13.** `/filter <preset>` — Apply an audio filter preset\n\n" +
+            "**14.** `/chatplay` — Manage ChatPlay mode\n\n" +
+            "**15.** `/about` — Learn more about Musicify"
         )
     );
 }
