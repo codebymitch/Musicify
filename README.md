@@ -1,11 +1,11 @@
 # ![Musicify Cover](/.github/assets/M_Banner.png)
 
-[![Invite Musicify](https://img.shields.io/badge/-Invite%20Musicify-111110?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIgMTZjNC04IDQgMiAxMCAwczQtMTAgMTAtNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkFDQzE1IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==&logoColor=white&style=flat-square&logoWidth=20)](OAuth invite link)
+[![Invite Musicify](https://img.shields.io/badge/-Invite%20Musicify-111110?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIgMTZjNC04IDQgMiAxMCAwczQtMTAgMTAtNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkFDQzE1IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==&logoColor=white&style=flat-square&logoWidth=20)](https://discord.com/oauth2/authorize?client_id=1502977716196999309)
 [![Support Server](https://img.shields.io/badge/-Support%20Server-%235865F2?logo=discord&logoColor=white&style=flat-square&logoWidth=20)](https://discord.gg/MRjEUhDCpZ)
 
 ## Musicify
 
-Musicify is a ChatPlay-focused Discord music bot that also operates like a standard music bot. It is easy to self-host with Docker, or [click here to invite the bot](OAuth invite link) and start using it today with no hosting or setup required.
+Musicify is a ChatPlay-focused Discord music bot that also operates like a standard music bot. It is easy to self-host with Docker, or [click here to invite the bot](https://discord.com/oauth2/authorize?client_id=1502977716196999309) and start using it today with no hosting or setup required.
 
 ## Features & Commands
 
