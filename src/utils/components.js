@@ -36,7 +36,7 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 `**Now Playing**\n` +
-                `### ${track.info.title || "Unknown"}\n` +
+                `**${track.info.title || "Unknown"}**\n` +
                 `-# ${track.info.author || "Unknown Artist"}`
             ),
             new TextDisplayBuilder().setContent(
@@ -58,12 +58,9 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
     // --- Status: Autoplay / Loop / Volume ---
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "**Autoplay**" +
-            `-# ${guildData.autoplay ? "On" : "Off"}` +
-            "**Loop**" +
-            `-# ${capitalize(guildData.loop)}` +
-            "**Volume**" +
-            `-# ${guildData.volume}%`
+            `Autoplay: ${guildData.autoplay ? "On" : "Off"}\n` +
+            `Loop: ${capitalize(guildData.loop)}\n` +
+            `Volume: ${guildData.volume}%`
         )
     );
 
@@ -185,7 +182,7 @@ function createChatPlayIdleContainer() {
 
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "### <:Musicify_Logo:1504329028356673536> Musicify ChatPlay\n" +
+            "## <:Musicify_Logo:1504329028356673536> Musicify ChatPlay\n" +
             "-# *Type a song name in this channel to play it!*\n" +
             "-# I'll search, play it in your voice channel, and keep this message updated."
         )
@@ -230,7 +227,7 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
     // --- ChatPlay Header (always visible) ---
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "### <:Musicify_Logo:1504329028356673536> Musicify ChatPlay\n" +
+            "## <:Musicify_Logo:1504329028356673536> Musicify ChatPlay\n" +
             "-# *Type a song name in this channel to play it!*\n" +
             "-# I'll search, play it in your voice channel, and keep this message updated."
         )
@@ -243,7 +240,7 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 `**Now Playing**\n` +
-                `### ${track.info.title || "Unknown"}\n` +
+                `**${track.info.title || "Unknown"}**\n` +
                 `-# ${track.info.author || "Unknown Artist"}`
             ),
             new TextDisplayBuilder().setContent(
@@ -265,12 +262,9 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
     // --- Status: Autoplay / Loop / Volume ---
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "**Autoplay**" +
-            `-# ${guildData.autoplay ? "On" : "Off"}` +
-            "**Loop**" +
-            `-# ${capitalize(guildData.loop)}` +
-            "**Volume**" +
-            `-# ${guildData.volume}%`
+            `Autoplay: ${guildData.autoplay ? "On" : "Off"}\n` +
+            `Loop: ${capitalize(guildData.loop)}\n` +
+            `Volume: ${guildData.volume}%`
         )
     );
 
