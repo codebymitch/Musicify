@@ -87,10 +87,10 @@ module.exports = {
             const reply = new ContainerBuilder();
             reply.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    "### ✅ ChatPlay Enabled\n\n" +
-                    "**Status**\n" +
-                    "-# Listening for song requests.\n\n" +
-                    "**Channel**\n" +
+                    "### ChatPlay Enabled" +
+                    "**Status**" +
+                    "-# Listening for song requests." +
+                    "**Channel**" +
                     `-# <#${guildData.chatPlayChannelId}>`
                 )
             );

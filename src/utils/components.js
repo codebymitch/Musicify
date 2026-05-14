@@ -58,11 +58,11 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
     // --- Status: Autoplay / Loop / Volume ---
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "**Autoplay**\n" +
-            `-# ${guildData.autoplay ? "On" : "Off"}\n\n` +
-            "**Loop**\n" +
-            `-# ${capitalize(guildData.loop)}\n\n` +
-            "**Volume**\n" +
+            "**Autoplay**" +
+            `-# ${guildData.autoplay ? "On" : "Off"}` +
+            "**Loop**" +
+            `-# ${capitalize(guildData.loop)}` +
+            "**Volume**" +
             `-# ${guildData.volume}%`
         )
     );
@@ -72,7 +72,7 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
 
     // --- Next on Deck ---
     const queue = player.queue;
-    let nextContent = "**Next on Deck**\n\n";
+    let nextContent = "**Next on Deck**\n";
     if (queue && queue.length > 0) {
         const upcoming = queue.slice(0, 3);
         for (let i = 0; i < upcoming.length; i++) {
@@ -265,11 +265,11 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
     // --- Status: Autoplay / Loop / Volume ---
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "**Autoplay**\n" +
-            `-# ${guildData.autoplay ? "On" : "Off"}\n\n` +
-            "**Loop**\n" +
-            `-# ${capitalize(guildData.loop)}\n\n` +
-            "**Volume**\n" +
+            "**Autoplay**" +
+            `-# ${guildData.autoplay ? "On" : "Off"}` +
+            "**Loop**" +
+            `-# ${capitalize(guildData.loop)}` +
+            "**Volume**" +
             `-# ${guildData.volume}%`
         )
     );
@@ -279,7 +279,7 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
 
     // --- Next on Deck ---
     const queue = player.queue;
-    let nextContent = "**Next on Deck**\n\n";
+    let nextContent = "**Next on Deck**\n";
     if (queue && queue.length > 0) {
         const upcoming = queue.slice(0, 3);
         for (let i = 0; i < upcoming.length; i++) {
