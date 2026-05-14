@@ -1,19 +1,15 @@
 const {
     SlashCommandBuilder,
     MessageFlags,
-    AttachmentBuilder,
     ContainerBuilder,
     TextDisplayBuilder,
     SeparatorBuilder,
     SectionBuilder,
     ThumbnailBuilder,
-    MediaGalleryBuilder,
-    MediaGalleryItemBuilder,
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
 } = require("discord.js");
-const path = require("path");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -21,91 +17,59 @@ module.exports = {
         .setDescription("Learn more about Musicify"),
 
     async execute(interaction, client) {
-        const bannerPath = path.join(
-            __dirname,
-            "..",
-            "..",
-            ".github",
-            "assets",
-            "M_Banner.png"
-        );
-        const bannerAttachment = new AttachmentBuilder(bannerPath, {
-            name: "M_Banner.png",
-        });
+        const container = new ContainerBuilder();
 
-        // ─── Container 1: Banner + About ───
-        const container1 = new ContainerBuilder();
+        const botAvatar = client.user.displayAvatarURL({ size: 256 });
 
-        container1.addMediaGalleryComponents(
-            new MediaGalleryBuilder().addItems(
-                new MediaGalleryItemBuilder().setURL("attachment://M_Banner.png")
-            )
+        container.addSectionComponents(
+            new SectionBuilder()
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        "# <:Musicify_Logo:1504329028356673536> About Musicify"
+                    )
+                )
+                .setThumbnailAccessory(
+                    new ThumbnailBuilder().setURL(botAvatar)
+                )
         );
 
-        container1.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                "### 🎧 About Musicify\n" +
-                "-# Your premium music companion for Discord."
-            )
-        );
+        container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
-        container1.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-        container1.addTextDisplayComponents(
+        container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 "**What is Musicify?**\n" +
-                "-# A premium multi-guild Discord music bot built to deliver\n" +
-                "-# high-quality music streaming directly to your voice channels.\n\n" +
+                "-# A ChatPlay-focused Discord music bot that delivers high-quality\n" +
+                "-# music streaming directly to your voice channels.\n\n" +
                 "**Powered By**\n" +
-                "-# discord.js · Riffy · Musicard\n\n" +
+                "-# [discord.js](https://discord.js.org/) · [Riffy](https://riffy.js.org/) · [Musicard](https://www.npmjs.com/package/musicard)\n\n" +
                 "**Features**\n" +
-                "-# 🎶 Rich now-playing cards with progress bars\n" +
-                "-# 🎛️ 10+ audio filter presets\n" +
-                "-# 📜 Smart queue management with pagination\n" +
-                "-# 💬 ChatPlay — instant song requests\n" +
-                "-# 🎮 Interactive button-based controls"
+                "-# • **Rich now-playing cards** with progress bars\n" +
+                "-# • **10+ audio filter** presets\n" +
+                "-# • **Smart queue management** with pagination\n" +
+                "-# • **ChatPlay** — instant song requests\n" +
+                "-# • **Interactive button-based** controls"
             )
         );
 
-        // ─── Container 2: Team + Links ───
-        const container2 = new ContainerBuilder();
-
-        container2.addTextDisplayComponents(
+        container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "### 👥 Team\n" +
-                "-# Built by TouchPoint and a passionate team of developers."
+                "-# Musicify is [open source](https://github.com/codebymitch/Musicify). Built by a passionate team of developers."
             )
         );
 
-        container2.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-        container2.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                "**codebymitch**\n" +
-                "-# Lead Developer\n\n" +
-                "**ramsquishna**\n" +
-                "-# Developer"
-            )
-        );
-
-        container2.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+        container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
 
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
-                .setLabel("Source")
-                .setURL("https://github.com/codebymitch/Musicify")
-                .setStyle(ButtonStyle.Link),
-            new ButtonBuilder()
-                .setLabel("Support")
+                .setLabel("Support Server")
                 .setURL("https://discord.gg/musicify")
                 .setStyle(ButtonStyle.Link)
         );
 
-        container2.addActionRowComponents(row);
+        container.addActionRowComponents(row);
 
         await interaction.reply({
-            components: [container1, container2],
-            files: [bannerAttachment],
+            components: [container],
             flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
         });
     },

@@ -1,6 +1,6 @@
 const { MessageFlags, AttachmentBuilder } = require("discord.js");
 const { getGuildData, clearUpdateInterval } = require("../utils/playerStore");
-const { createNowPlayingContainer, createChatPlayIdleContainer } = require("../utils/components");
+const { createNowPlayingContainer, createChatPlayIdleContainer, createChatPlayNowPlayingContainer } = require("../utils/components");
 const { generateMusicCard } = require("../utils/musicard");
 const path = require("path");
 const fs = require("fs");
@@ -71,7 +71,9 @@ async function refreshPlayerMessage(client, guildId) {
         const track = player.current;
 
         const musicardBuffer = await generateMusicCard(track, player, guildData);
-        const container = createNowPlayingContainer(track, player, guildData, musicardBuffer);
+        const container = guildData.chatPlayChannelId
+            ? createChatPlayNowPlayingContainer(track, player, guildData, musicardBuffer)
+            : createNowPlayingContainer(track, player, guildData, musicardBuffer);
 
         const files = [];
         if (musicardBuffer) {
@@ -145,8 +147,10 @@ function setupPlayerHandler(client) {
             // Generate musicard image
             const musicardBuffer = await generateMusicCard(track, player, guildData);
 
-            // Build the container
-            const container = createNowPlayingContainer(track, player, guildData, musicardBuffer);
+            // Build the container - use ChatPlay version if in ChatPlay channel
+            const container = guildData.chatPlayChannelId
+                ? createChatPlayNowPlayingContainer(track, player, guildData, musicardBuffer)
+                : createNowPlayingContainer(track, player, guildData, musicardBuffer);
 
             // Prepare files
             const files = [];
@@ -236,7 +240,8 @@ function setupPlayerHandler(client) {
                 guildData.idleTimeout = setTimeout(() => {
                     try {
                         const currentPlayer = client.riffy.players.get(player.guildId);
-                        if (currentPlayer && !currentPlayer.playing && !currentPlayer.paused && !currentPlayer.current) {
+                        // Check if player exists and is not actively playing
+                        if (currentPlayer && !currentPlayer.playing && !currentPlayer.paused) {
                             currentPlayer.destroy();
                         }
                     } catch (err) {

@@ -42,6 +42,13 @@ module.exports = {
                 flags: MessageFlags.IsComponentsV2,
             });
 
+            // Set slowmode to prevent spam (5 seconds)
+            try {
+                await interaction.channel.setRateLimitPerUser(5, "ChatPlay setup - prevents spam");
+            } catch (err) {
+                // Bot may lack Manage Channel permission
+            }
+
             guildData.chatPlayChannelId = interaction.channel.id;
             guildData.chatPlayMessageId = chatMsg.id;
             guildData.chatPlayEnabled = true;

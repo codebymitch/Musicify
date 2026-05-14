@@ -19,8 +19,6 @@ function addNodeDetails(container, node, index) {
             `### ${statusEmoji} ${node.name || `Node ${index + 1}`}\n\n` +
             "**Status**\n" +
             `-# ${statusText}\n` +
-            "**Secure**\n" +
-            `-# ${node.secure ? "Yes (SSL)" : "No"}\n` +
             "**Rest Version**\n" +
             `-# ${node.restVersion || "N/A"}`
         )
@@ -65,59 +63,6 @@ function addNodeDetails(container, node, index) {
     }
 
     container.addTextDisplayComponents(new TextDisplayBuilder().setContent(cpuContent));
-
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-    // Memory
-    let memContent = "**Memory**\n\n";
-    if (stats.memory) {
-        const used = (stats.memory.used / 1024 / 1024).toFixed(1);
-        const free = (stats.memory.free / 1024 / 1024).toFixed(1);
-        const allocated = (stats.memory.allocated / 1024 / 1024).toFixed(1);
-        const reservable = (stats.memory.reservable / 1024 / 1024).toFixed(1);
-        memContent +=
-            "**Used**\n" +
-            `-# 💾 ${used} MB\n` +
-            "**Free**\n" +
-            `-# 🆓 ${free} MB\n` +
-            "**Allocated**\n" +
-            `-# 📦 ${allocated} MB\n` +
-            "**Reservable**\n" +
-            `-# 📊 ${reservable} MB`;
-    } else {
-        memContent += "-# *No memory data available*";
-    }
-
-    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(memContent));
-
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-    // System — Uptime + Frame Stats
-    let sysContent = "**System**\n\n";
-    if (stats.uptime) {
-        const up = stats.uptime / 1000;
-        const d = Math.floor(up / 86400);
-        const h = Math.floor((up % 86400) / 3600);
-        const m = Math.floor((up % 3600) / 60);
-        const s = Math.floor(up % 60);
-        sysContent +=
-            "**Uptime**\n" +
-            `-# ⏱️ ${d}d ${h}h ${m}m ${s}s\n`;
-    }
-
-    if (stats.frameStats) {
-        sysContent +=
-            "**Frames Sent**\n" +
-            `-# 📤 ${stats.frameStats.sent || 0}\n` +
-            "**Frames Nulled**\n" +
-            `-# ❌ ${stats.frameStats.nulled || 0}\n` +
-            "**Frames Deficit**\n" +
-            `-# ⚠️ ${stats.frameStats.deficit || 0}`;
-    } else {
-        sysContent += "**Frame Stats**\n-# 📤 N/A";
-    }
-
-    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(sysContent));
 }
 
 module.exports = { addNodeDetails };

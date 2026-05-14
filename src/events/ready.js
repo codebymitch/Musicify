@@ -5,7 +5,7 @@ const { readDB } = require("../utils/database");
 const { getGuildData } = require("../utils/playerStore");
 
 module.exports = {
-    name: "ready",
+    name: "clientReady",
     once: true,
     async execute(client) {
         console.log(`[Musicify] Logged in as ${client.user.tag}`);
@@ -14,11 +14,30 @@ module.exports = {
         // Initialize riffy with bot user ID
         client.riffy.init(client.user.id);
 
-        // Set activity
+        // Cycling statuses
+        const statuses = [
+            "Pretending to be a DJ",
+            "/help for commands",
+            "Spinning tracks for servers",
+            "ChatPlay mode activated",
+            "Bass boosting servers",
+            "Now playing: your favorite songs",
+        ];
+
+        // Set initial activity
         client.user.setPresence({
-            activities: [{ name: "TouchPoint <3", type: ActivityType.Watching }],
-            status: "idle",
+            activities: [{ name: statuses[0], type: ActivityType.Playing }],
+            status: "online",
         });
+
+        let statusIndex = 0;
+        setInterval(() => {
+            statusIndex = (statusIndex + 1) % statuses.length;
+            client.user.setPresence({
+                activities: [{ name: statuses[statusIndex], type: ActivityType.Playing }],
+                status: "online",
+            });
+        }, 120000); // 2 minutes
 
         // --- Restore ChatPlay channels from JSON database ---
         try {

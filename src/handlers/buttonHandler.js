@@ -1,6 +1,6 @@
 const { MessageFlags, AttachmentBuilder } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
-const { createNowPlayingContainer, createQueueContainer } = require("../utils/components");
+const { createNowPlayingContainer, createQueueContainer, createChatPlayIdleContainer } = require("../utils/components");
 const { generateMusicCard } = require("../utils/musicard");
 const { addNodeDetails } = require("../utils/nodeDetails");
 
@@ -16,7 +16,7 @@ async function handleButtonInteraction(client, interaction) {
     const player = client.riffy.players.get(guildId);
     const guildData = getGuildData(guildId);
 
-    // Handle node stats dropdown
+    // Handle node stats dropdown - show dedicated node details view
     if (interaction.isStringSelectMenu() && interaction.customId === "node_stats_select") {
         await interaction.deferUpdate();
 
@@ -33,40 +33,57 @@ async function handleButtonInteraction(client, interaction) {
         const selectedNode = nodeList[nodeIndex];
         if (!selectedNode) return;
 
-        // Rebuild the container with selected node's details
-        const { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require("discord.js");
+        const { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+
+        const connected = selectedNode.connected || selectedNode.isConnected || false;
+        const statusEmoji = connected ? "🟢" : "🔴";
+        const statusText = connected ? "Connected" : "Disconnected";
 
         const container = new ContainerBuilder();
+
+        // Node header
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "### 🔗 Lavalink Node Stats\n" +
-                `-# ${nodeList.length} nodes configured`
+                `## ${statusEmoji} ${selectedNode.name || `Node ${nodeIndex + 1}`}\n` +
+                `-# ${statusText}`
             )
         );
 
-        // Dropdown at the top (Command Browser style)
-        const selectMenu = new StringSelectMenuBuilder()
-            .setCustomId("node_stats_select")
-            .setPlaceholder("📡 Select a node")
-            .setMinValues(1)
-            .setMaxValues(1);
+        container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
-        for (let i = 0; i < nodeList.length; i++) {
-            const n = nodeList[i];
-            const c = n.connected || n.isConnected || false;
-            selectMenu.addOptions(
-                new StringSelectMenuOptionBuilder()
-                    .setLabel(`${n.name || `Node ${i + 1}`}`)
-                    .setDescription(`${c ? "🟢 Connected" : "🔴 Disconnected"}`)
-                    .setValue(`node_${i}`)
-                    .setDefault(i === nodeIndex)
+        if (!connected || !selectedNode.stats) {
+            container.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    `-# Rest Version: ${selectedNode.restVersion || "N/A"}\n\n` +
+                    "-# *Node is offline — no stats available.*"
+                )
+            );
+        } else {
+            const stats = selectedNode.stats;
+            const cpuCores = stats.cpu?.cores || "N/A";
+            const sysLoad = stats.cpu ? `${(stats.cpu.systemLoad * 100).toFixed(1)}%` : "N/A";
+            const llLoad = stats.cpu ? `${(stats.cpu.lavalinkLoad * 100).toFixed(1)}%` : "N/A";
+
+            container.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    `-# Rest Version: ${selectedNode.restVersion || "N/A"}\n\n` +
+                    `**Players**\n` +
+                    `-# 🎶 Active: ${stats.playingPlayers || 0}  •  📻 Total: ${stats.players || 0}\n\n` +
+                    `**CPU**\n` +
+                    `-# 🖥️ Cores: ${cpuCores}  •  ⚙️ System: ${sysLoad}  •  🔧 Lavalink: ${llLoad}`
+                )
             );
         }
 
-        container.addActionRowComponents(new ActionRowBuilder().addComponents(selectMenu));
+        container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
 
-        // Node details below
-        addNodeDetails(container, selectedNode, nodeIndex);
+        // Back button
+        const backButton = new ButtonBuilder()
+            .setCustomId("status_back")
+            .setEmoji("⬅️")
+            .setStyle(ButtonStyle.Secondary);
+
+        container.addActionRowComponents(new ActionRowBuilder().addComponents(backButton));
 
         try {
             await interaction.editReply({
@@ -79,18 +96,117 @@ async function handleButtonInteraction(client, interaction) {
         return;
     }
 
+    // Handle status back button - return to main status view
+    if (interaction.isButton() && interaction.customId === "status_back") {
+        await interaction.deferUpdate();
+
+        const { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+
+        const nodes = client.riffy.nodeMap;
+        const nodeList = Array.isArray(nodes)
+            ? nodes
+            : nodes instanceof Map
+              ? [...nodes.values()]
+              : Object.values(nodes || {});
+
+        const connectedNodes = nodeList.filter(n => n.connected || n.isConnected).length;
+        const totalNodes = nodeList.length;
+        const botPing = client.ws?.ping ?? 0;
+        const uptimeSeconds = process.uptime();
+        const startTime = new Date(Date.now() - uptimeSeconds * 1000);
+
+        let statusEmoji = "🟢";
+        let statusText = "All systems operational";
+        if (connectedNodes === 0 || botPing > 300) {
+            statusEmoji = "�";
+            statusText = "Major system issues detected";
+        } else if (connectedNodes < totalNodes || botPing > 100) {
+            statusEmoji = "🟡";
+            statusText = "Some systems experiencing issues";
+        }
+
+        const dayLabels = ['-6', '-5', '-4', '-3', '-2', '-1', ' 0'].join(' ');
+
+        const container = new ContainerBuilder();
+
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `## ${statusEmoji} ${statusText}\n\n` +
+                `**7-day History**\n` +
+                `-# ${dayLabels}\n` +
+                `-# 🟢🟢🟢🟢🟢🟢🟢`
+            )
+        );
+
+        container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
+
+        const supportButton = new ButtonBuilder()
+            .setLabel("Known Outages")
+            .setURL("https://discord.gg/musicify")
+            .setStyle(ButtonStyle.Link);
+
+        container.addActionRowComponents(new ActionRowBuilder().addComponents(supportButton));
+
+        container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
+
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `**Uptime**\n` +
+                `-# 🕒 <t:${Math.floor(startTime.getTime() / 1000)}:R>`
+            )
+        );
+
+        container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                "### Lavalink Node Stats\n" +
+                `-# ${nodeList.length} node${nodeList.length === 1 ? "" : "s"} available`
+            )
+        );
+
+        const selectMenu = new StringSelectMenuBuilder()
+            .setCustomId("node_stats_select")
+            .setPlaceholder("📡 Select a node")
+            .setMinValues(1)
+            .setMaxValues(1);
+
+        for (let i = 0; i < nodeList.length; i++) {
+            const node = nodeList[i];
+            const connected = node.connected || node.isConnected || false;
+            const nodeStatusEmoji = connected ? "🟢" : "🔴";
+            selectMenu.addOptions(
+                new StringSelectMenuOptionBuilder()
+                    .setLabel(`${node.name || `Node ${i + 1}`}`)
+                    .setDescription(`${nodeStatusEmoji} ${connected ? "Connected" : "Disconnected"}`)
+                    .setValue(`node_${i}`)
+            );
+        }
+
+        container.addActionRowComponents(new ActionRowBuilder().addComponents(selectMenu));
+
+        try {
+            await interaction.editReply({
+                components: [container],
+                flags: MessageFlags.IsComponentsV2,
+            });
+        } catch (err) {
+            console.error("[Musicify] Status back error:", err.message);
+        }
+        return;
+    }
+
     // Handle help dropdown navigation
     if (interaction.isStringSelectMenu() && interaction.customId === "help_select") {
         await interaction.deferUpdate();
 
         const selectedPage = interaction.values[0];
-        const { buildHelpPage, buildBannerContainer } = require("../commands/help");
-        const bannerContainer = buildBannerContainer();
-        const container = buildHelpPage(client, selectedPage);
+        const { buildHelpPage } = require("../commands/help");
+        const container = await buildHelpPage(client, selectedPage);
 
         try {
             await interaction.editReply({
-                components: [bannerContainer, container],
+                components: [container],
                 flags: MessageFlags.IsComponentsV2,
             });
         } catch (err) {
@@ -232,10 +348,46 @@ async function handleButtonInteraction(client, interaction) {
         }
 
         case "stop": {
+            // If ChatPlay and 5+ songs in queue, ask for confirmation first
+            const queueLength = player.queue?.length || 0;
+            const isChatPlay = guildData.chatPlayChannelId && guildData.chatPlayMessageId;
+            if (isChatPlay && queueLength >= 5 && !guildData.stopConfirmPending) {
+                guildData.stopConfirmPending = interaction.user.id;
+                // Clear confirmation after 15 seconds
+                setTimeout(() => {
+                    if (guildData.stopConfirmPending === interaction.user.id) {
+                        guildData.stopConfirmPending = null;
+                    }
+                }, 15000);
+                return interaction.followUp({
+                    content: `⚠️ There are **${queueLength} songs** in the queue. Click stop again within 15 seconds to confirm.`,
+                    flags: MessageFlags.Ephemeral,
+                });
+            }
+            guildData.stopConfirmPending = null;
+            
+            // If ChatPlay, edit message back to idle state BEFORE destroying player
+            if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
+                try {
+                    const container = createChatPlayIdleContainer();
+                    const channel = client.channels.cache.get(guildData.chatPlayChannelId);
+                    if (channel) {
+                        const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
+                        await msg.edit({
+                            components: [container],
+                            attachments: [],
+                            flags: MessageFlags.IsComponentsV2,
+                        });
+                    }
+                } catch (err) {
+                    console.error("[Musicify] Failed to edit ChatPlay message on stop:", err.message);
+                }
+            }
+            
             player.queue.clear();
             player.stop();
             player.destroy();
-            break;
+            return; // Don't try to update player message since player is destroyed
         }
 
         case "shuffle": {

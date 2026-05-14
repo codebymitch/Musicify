@@ -185,7 +185,7 @@ function createChatPlayIdleContainer() {
 
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "### 🎧 Musicify ChatPlay\n" +
+            "### <:Musicify_Logo:1504329028356673536> Musicify ChatPlay\n" +
             "-# *Type a song name in this channel to play it!*\n" +
             "-# I'll search, play it in your voice channel, and keep this message updated."
         )
@@ -218,6 +218,167 @@ function createChatPlayIdleContainer() {
 
     container.addActionRowComponents(row1, row2);
 
+    return container;
+}
+
+/**
+ * Create a ChatPlay now-playing container (includes ChatPlay header + now playing info)
+ */
+function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuffer) {
+    const container = new ContainerBuilder();
+
+    // --- ChatPlay Header (always visible) ---
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            "### <:Musicify_Logo:1504329028356673536> Musicify ChatPlay\n" +
+            "-# *Type a song name in this channel to play it!*\n" +
+            "-# I'll search, play it in your voice channel, and keep this message updated."
+        )
+    );
+
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+
+    // --- Now Playing header + track info with thumbnail ---
+    const section = new SectionBuilder()
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `**Now Playing**\n` +
+                `### ${track.info.title || "Unknown"}\n` +
+                `-# ${track.info.author || "Unknown Artist"}`
+            ),
+            new TextDisplayBuilder().setContent(
+                `-# ⏱ ${formatDuration(track.info.length)}\n` +
+                `-# Requested by <@${track.info.requester?.id || track.info.requester}>`
+            )
+        )
+        .setThumbnailAccessory(
+            new ThumbnailBuilder().setURL(
+                track.info.artworkUrl || track.info.thumbnail || "https://i.imgur.com/4YFmJMi.png"
+            )
+        );
+
+    container.addSectionComponents(section);
+
+    // --- Separator ---
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+
+    // --- Status: Autoplay / Loop / Volume ---
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            "**Autoplay**\n" +
+            `-# ${guildData.autoplay ? "On" : "Off"}\n\n` +
+            "**Loop**\n" +
+            `-# ${capitalize(guildData.loop)}\n\n` +
+            "**Volume**\n" +
+            `-# ${guildData.volume}%`
+        )
+    );
+
+    // --- Separator ---
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+
+    // --- Next on Deck ---
+    const queue = player.queue;
+    let nextContent = "**Next on Deck**\n\n";
+    if (queue && queue.length > 0) {
+        const upcoming = queue.slice(0, 3);
+        for (let i = 0; i < upcoming.length; i++) {
+            const t = upcoming[i];
+            nextContent += `**${i + 1}.** ${(t.info.title || "Unknown").substring(0, 45)}\n`;
+            nextContent += `-# ${(t.info.author || "Unknown Artist").substring(0, 30)} · ${formatDuration(t.info.length)}\n\n`;
+        }
+        if (queue.length > 3) {
+            nextContent += `-# *...and ${queue.length - 3} more in queue*`;
+        }
+    } else {
+        nextContent += "-# *No upcoming tracks*";
+    }
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(nextContent.trim())
+    );
+
+    // --- Musicard image ---
+    if (musicardBuffer) {
+        container.addMediaGalleryComponents(
+            new MediaGalleryBuilder().addItems(
+                new MediaGalleryItemBuilder().setURL("attachment://musicard.png")
+            )
+        );
+    }
+
+    // --- Song suggestions dropdown ---
+    if (guildData.suggestions && guildData.suggestions.length > 0) {
+        const selectMenu = new StringSelectMenuBuilder()
+            .setCustomId("song_suggestion")
+            .setPlaceholder("🎶 Pick a similar song")
+            .setMinValues(1)
+            .setMaxValues(1);
+
+        const suggestions = guildData.suggestions.slice(0, 10);
+        for (const suggestion of suggestions) {
+            selectMenu.addOptions(
+                new StringSelectMenuOptionBuilder()
+                    .setLabel((suggestion.info?.title || "Unknown").substring(0, 100))
+                    .setDescription((suggestion.info?.author || "Unknown Artist").substring(0, 100))
+                    .setValue(suggestion.info?.uri || suggestion.info?.title || "unknown")
+            );
+        }
+
+        container.addActionRowComponents(
+            new ActionRowBuilder().addComponents(selectMenu)
+        );
+    }
+
+    // --- Row 1: Shuffle | Previous | Pause/Play | Next | Loop ---
+    const isPaused = player.paused;
+    const row1 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId("shuffle")
+            .setEmoji("🔀")
+            .setStyle(guildData.shuffle ? ButtonStyle.Primary : ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId("previous")
+            .setEmoji("⏮️")
+            .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId("pause_resume")
+            .setEmoji(isPaused ? "▶️" : "⏸️")
+            .setStyle(isPaused ? ButtonStyle.Success : ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId("skip")
+            .setEmoji("⏭️")
+            .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId("loop")
+            .setEmoji("🔁")
+            .setStyle(guildData.loop !== "none" ? ButtonStyle.Primary : ButtonStyle.Secondary)
+    );
+
+    // --- Row 2: Autoplay | Vol Down | Stop | Vol Up | Queue ---
+    const row2 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId("autoplay")
+            .setEmoji("📻")
+            .setStyle(guildData.autoplay ? ButtonStyle.Primary : ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId("vol_down")
+            .setEmoji("🔉")
+            .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId("stop")
+            .setEmoji("⏹️")
+            .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+            .setCustomId("vol_up")
+            .setEmoji("🔊")
+            .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId("queue")
+            .setEmoji("📜")
+            .setStyle(ButtonStyle.Secondary)
+    );
+
+    container.addActionRowComponents(row1, row2);
     return container;
 }
 
@@ -342,6 +503,7 @@ function capitalize(str) {
 module.exports = {
     createNowPlayingContainer,
     createChatPlayIdleContainer,
+    createChatPlayNowPlayingContainer,
     createQueueContainer,
     formatDuration,
 };
