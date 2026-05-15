@@ -176,7 +176,7 @@ async function handleButtonInteraction(client, interaction) {
 
         const supportButton = new ButtonBuilder()
             .setLabel("Known Outages")
-            .setURL("https://discord.gg/musicify")
+            .setURL("https://discord.gg/MRjEUhDCpZ")
             .setStyle(ButtonStyle.Link);
 
         container.addActionRowComponents(new ActionRowBuilder().addComponents(supportButton));

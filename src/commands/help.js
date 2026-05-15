@@ -153,7 +153,7 @@ function addHomePage(container, getCmd) {
             `**1.** Join a voice channel\n` +
             `-# Make sure you're connected before requesting a song.\n` +
             `**2.** Use ${getCmd("play")} \`<song name or URL>\`\n` +
-            `-# Search YouTube Music, Spotify, SoundCloud and more.\n` +
+            `-# Supports Spotify, SoundCloud, Deezer & Apple Music.\n` +
             `**3.** Control with buttons or commands!\n` +
             `-# Use the interactive player or slash commands.`
         )
@@ -334,8 +334,8 @@ function addTroubleshootPage(container, getCmd) {
         new TextDisplayBuilder().setContent(
             "**Bot won't play music / Track Error**\n" +
             "-# The song may be age-restricted or region-blocked.\n" +
-            "-# YouTube might be temporarily blocking the stream.\n" +
-            "-# **Fix:** Try a different song or a direct Spotify/SoundCloud link.\n\n" +
+            "-# The streaming source may be temporarily unavailable.\n" +
+            "-# **Fix:** Try a different song or paste a direct Spotify/SoundCloud URL.\n\n" +
 
             "**Bot joins but immediately leaves**\n" +
             "-# Musicify may lack Speak/Connect permissions in that channel.\n" +

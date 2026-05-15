@@ -1,4 +1,6 @@
 const { getGuildData, deleteGuildData } = require("../utils/playerStore");
+const { createChatPlayIdleContainer } = require("../utils/components");
+const { MessageFlags } = require("discord.js");
 
 module.exports = {
     name: "voiceStateUpdate",
@@ -7,6 +9,7 @@ module.exports = {
         if (oldState.id === client.user.id && !newState.channelId) {
             const player = client.riffy.players.get(oldState.guild.id);
             if (player) {
+                await resetChatPlayIfActive(client, oldState.guild.id);
                 player.destroy();
             }
             return;
@@ -25,7 +28,7 @@ module.exports = {
                     if (guildData.twentyFourSeven) return;
 
                     // Bot is alone, disconnect after 30 seconds
-                    setTimeout(() => {
+                    setTimeout(async () => {
                         const currentChannel = oldState.guild.members.cache
                             .get(client.user.id)
                             ?.voice?.channel;
@@ -42,6 +45,7 @@ module.exports = {
                                     oldState.guild.id
                                 );
                                 if (player) {
+                                    await resetChatPlayIfActive(client, oldState.guild.id);
                                     player.destroy();
                                 }
                             }
@@ -52,3 +56,22 @@ module.exports = {
         }
     },
 };
+
+async function resetChatPlayIfActive(client, guildId) {
+    const guildData = getGuildData(guildId);
+    if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
+        try {
+            const channel = client.channels.cache.get(guildData.chatPlayChannelId);
+            if (channel) {
+                const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
+                await msg.edit({
+                    components: [createChatPlayIdleContainer()],
+                    attachments: [],
+                    flags: MessageFlags.IsComponentsV2,
+                });
+            }
+        } catch (err) {
+            // message may have been deleted
+        }
+    }
+}

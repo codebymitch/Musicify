@@ -62,7 +62,7 @@ module.exports = {
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setLabel("Support Server")
-                .setURL("https://discord.gg/musicify")
+                .setURL("https://discord.gg/MRjEUhDCpZ")
                 .setStyle(ButtonStyle.Link)
         );
 
