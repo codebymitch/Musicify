@@ -13,11 +13,26 @@ module.exports = {
                 await command.execute(interaction, client);
             } catch (error) {
                 console.error(`[Musicify] Command error (${interaction.commandName}):`, error);
+                
+                // Handle expired interactions
+                if (error.code === 10062) {
+                    console.log("[Musicify] Interaction expired - unable to respond");
+                    return;
+                }
+                
                 const reply = { content: "An error occurred.", flags: MessageFlags.Ephemeral };
-                if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp(reply);
-                } else {
-                    await interaction.reply(reply);
+                try {
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.followUp(reply);
+                    } else {
+                        await interaction.reply(reply);
+                    }
+                } catch (replyError) {
+                    if (replyError.code === 10062) {
+                        console.log("[Musicify] Interaction expired during error reply");
+                    } else {
+                        console.error("[Musicify] Error sending error reply:", replyError);
+                    }
                 }
             }
             return;

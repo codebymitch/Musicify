@@ -13,8 +13,28 @@ async function handleButtonInteraction(client, interaction) {
         return;
     }
     const guildId = interaction.guild.id;
-    const player = client.riffy.players.get(guildId);
+    let player = client.riffy.players.get(guildId);
     const guildData = getGuildData(guildId);
+
+    // If no player exists but ChatPlay was active, try to recreate it
+    if (!player && guildData.chatPlayChannelId && guildData.chatPlayEnabled) {
+        const voiceChannel = interaction.member?.voice?.channel;
+        if (voiceChannel) {
+            try {
+                player = client.riffy.createConnection({
+                    guildId: guildId,
+                    voiceChannel: voiceChannel.id,
+                    textChannel: guildData.chatPlayChannelId,
+                    deaf: true,
+                });
+                // Restore volume
+                player.setVolume(guildData.volume);
+                console.log(`[Musicify] Recreated player for guild ${guildId} after restart`);
+            } catch (err) {
+                console.error(`[Musicify] Failed to recreate player for guild ${guildId}:`, err.message);
+            }
+        }
+    }
 
     // Handle node stats dropdown - show dedicated node details view
     if (interaction.isStringSelectMenu() && interaction.customId === "node_stats_select") {

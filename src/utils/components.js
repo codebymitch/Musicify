@@ -35,12 +35,10 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
     const section = new SectionBuilder()
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `**Now Playing**\n` +
-                `**${track.info.title || "Unknown"}**\n` +
-                `-# ${track.info.author || "Unknown Artist"}`
+                `**Now Playing — ${track.info.title || "Unknown"}**\n` +
+                `-# By ${track.info.author || "Unknown Artist"}`
             ),
             new TextDisplayBuilder().setContent(
-                `-# ⏱ ${formatDuration(track.info.length)}\n` +
                 `-# Requested by <@${track.info.requester?.id || track.info.requester}>`
             )
         )
@@ -74,8 +72,7 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
         const upcoming = queue.slice(0, 3);
         for (let i = 0; i < upcoming.length; i++) {
             const t = upcoming[i];
-            nextContent += `**${i + 1}.** ${(t.info.title || "Unknown").substring(0, 45)}\n`;
-            nextContent += `-# ${(t.info.author || "Unknown Artist").substring(0, 30)} · ${formatDuration(t.info.length)}\n\n`;
+            nextContent += `**${i + 1}.** ${(t.info.title || "Unknown").substring(0, 45)} - ${(t.info.author || "Unknown Artist").substring(0, 30)} · ${formatDuration(t.info.length)}\n`;
         }
         if (queue.length > 3) {
             nextContent += `-# *...and ${queue.length - 3} more in queue*`;
@@ -239,12 +236,10 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
     const section = new SectionBuilder()
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `**Now Playing**\n` +
-                `**${track.info.title || "Unknown"}**\n` +
-                `-# ${track.info.author || "Unknown Artist"}`
+                `**Now Playing — ${track.info.title || "Unknown"}**\n` +
+                `-# By ${track.info.author || "Unknown Artist"}`
             ),
             new TextDisplayBuilder().setContent(
-                `-# ⏱ ${formatDuration(track.info.length)}\n` +
                 `-# Requested by <@${track.info.requester?.id || track.info.requester}>`
             )
         )
@@ -278,8 +273,7 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
         const upcoming = queue.slice(0, 3);
         for (let i = 0; i < upcoming.length; i++) {
             const t = upcoming[i];
-            nextContent += `**${i + 1}.** ${(t.info.title || "Unknown").substring(0, 45)}\n`;
-            nextContent += `-# ${(t.info.author || "Unknown Artist").substring(0, 30)} · ${formatDuration(t.info.length)}\n\n`;
+            nextContent += `**${i + 1}.** ${(t.info.title || "Unknown").substring(0, 45)} - ${(t.info.author || "Unknown Artist").substring(0, 30)} · ${formatDuration(t.info.length)}\n`;
         }
         if (queue.length > 3) {
             nextContent += `-# *...and ${queue.length - 3} more in queue*`;
