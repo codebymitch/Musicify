@@ -488,10 +488,54 @@ function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+/**
+ * Create a ChatPlay container with loading state
+ */
+function createChatPlayLoadingContainer() {
+    const container = new ContainerBuilder();
+
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            "## <:Musicify_Logo:1504329028356673536> Musicify ChatPlay\n" +
+            "-# *Type a song name in this channel to play it!*\n" +
+            "-# I'll search, play it in your voice channel, and keep this message updated."
+        )
+    );
+
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            "-# **Status:** Searching for your song..."
+        )
+    );
+
+    // Disabled control buttons
+    const row1 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId("shuffle").setEmoji("🔀").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("previous").setEmoji("⏮️").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("pause_resume").setEmoji("⏸️").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("skip").setEmoji("⏭️").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("stop").setEmoji("⏹️").setStyle(ButtonStyle.Danger).setDisabled(true)
+    );
+
+    const row2 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId("autoplay").setEmoji("🔄").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("loop").setEmoji("🔁").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("vol_down").setEmoji("🔉").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("vol_up").setEmoji("🔊").setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId("queue").setEmoji("📋").setStyle(ButtonStyle.Secondary).setDisabled(true)
+    );
+
+    container.addActionRowComponents(row1, row2);
+    return container;
+}
+
 module.exports = {
     createNowPlayingContainer,
     createChatPlayIdleContainer,
     createChatPlayNowPlayingContainer,
+    createChatPlayLoadingContainer,
     createQueueContainer,
     formatDuration,
 };

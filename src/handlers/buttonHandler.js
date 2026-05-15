@@ -1,6 +1,6 @@
 const { MessageFlags, AttachmentBuilder } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
-const { createNowPlayingContainer, createQueueContainer, createChatPlayIdleContainer } = require("../utils/components");
+const { createNowPlayingContainer, createChatPlayNowPlayingContainer, createQueueContainer, createChatPlayIdleContainer } = require("../utils/components");
 const { generateMusicCard } = require("../utils/musicard");
 const { addNodeDetails } = require("../utils/nodeDetails");
 
@@ -12,6 +12,20 @@ async function handleButtonInteraction(client, interaction) {
         console.warn('[Musicify] Riffy client not initialized; button handler ignored.');
         return;
     }
+
+    // Fetch commands for IDs
+    let commands;
+    try {
+        commands = await client.application.commands.fetch();
+    } catch (e) {
+        commands = null;
+    }
+    
+    const getCmd = (name, subcommand = null) => {
+        const cmd = commands?.find(c => c.name === name);
+        if (!cmd) return subcommand ? `\`/${name} ${subcommand}\`` : `\`/${name}\``;
+        return subcommand ? `</${name} ${subcommand}:${cmd.id}>` : `</${name}:${cmd.id}>`;
+    };
     const guildId = interaction.guild.id;
     let player = client.riffy.players.get(guildId);
     const guildData = getGuildData(guildId);
@@ -238,7 +252,7 @@ async function handleButtonInteraction(client, interaction) {
     // Handle song suggestion select menu
     if (interaction.isStringSelectMenu() && interaction.customId === "song_suggestion") {
         if (!player) {
-            return interaction.reply({ content: "No active player.", flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: `❌ No music playing. Start with ${getCmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
         }
 
         await interaction.deferUpdate();
@@ -265,7 +279,7 @@ async function handleButtonInteraction(client, interaction) {
     // Queue button opens an ephemeral reply
     if (customId === "queue") {
         if (!player || !player.current) {
-            return interaction.reply({ content: "❌ No active player.", flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: `❌ No music playing. Start with ${getCmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
         }
         if (!guildData.queuePages) guildData.queuePages = new Map();
         guildData.queuePages.set(interaction.user.id, 0);
@@ -283,7 +297,7 @@ async function handleButtonInteraction(client, interaction) {
     // Queue pagination buttons
     if (customId.startsWith("queue_") && customId !== "queue") {
         if (!player || !player.current) {
-            return interaction.reply({ content: "❌ No active player.", flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: `❌ No music playing. Start with ${getCmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
         }
 
         await interaction.deferUpdate();
@@ -331,7 +345,7 @@ async function handleButtonInteraction(client, interaction) {
     // Most buttons need an active player — send ephemeral if not
     const needsPlayer = ["pause_resume", "skip", "previous", "stop", "shuffle", "loop", "autoplay", "vol_up", "vol_down"];
     if (needsPlayer.includes(customId) && !player) {
-        return interaction.reply({ content: "❌ No active player.", flags: MessageFlags.Ephemeral });
+        return interaction.reply({ content: `❌ No music playing. Start with ${getCmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
     }
 
     // Defer immediately to avoid 3s timeout
@@ -474,7 +488,10 @@ async function editPlayerMessageDirectly(client, player, guildData) {
         if (!player || !player.current) return;
 
         const musicardBuffer = await generateMusicCard(player.current, player, guildData);
-        const container = createNowPlayingContainer(player.current, player, guildData, musicardBuffer);
+        // Use ChatPlay container if in ChatPlay channel for consistent formatting
+        const container = guildData.chatPlayChannelId && guildData.chatPlayMessageId
+            ? createChatPlayNowPlayingContainer(player.current, player, guildData, musicardBuffer)
+            : createNowPlayingContainer(player.current, player, guildData, musicardBuffer);
 
         const files = [];
         if (musicardBuffer) {

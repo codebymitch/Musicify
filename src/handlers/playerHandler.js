@@ -144,6 +144,9 @@ function setupPlayerHandler(client) {
                 guildData.idleTimeout = null;
             }
 
+            // Start voice channel monitoring
+            startVoiceChannelMonitoring(client, player.guildId);
+
             // Generate musicard image
             const musicardBuffer = await generateMusicCard(track, player, guildData);
 
@@ -241,7 +244,7 @@ function setupPlayerHandler(client) {
                     try {
                         const currentPlayer = client.riffy.players.get(player.guildId);
                         // Check if player exists and is not actively playing
-                        if (currentPlayer && !currentPlayer.playing && !currentPlayer.paused) {
+                        if (currentPlayer && !currentPlayer.playing && !currentPlayer.paused && !currentPlayer.current) {
                             currentPlayer.destroy();
                         }
                     } catch (err) {
@@ -262,6 +265,7 @@ function setupPlayerHandler(client) {
     client.riffy.on("playerDisconnect", (player) => {
         const guildData = getGuildData(player.guildId);
         clearUpdateInterval(guildData);
+        stopVoiceChannelMonitoring(player.guildId);
         guildData.playerMessageId = null;
         guildData.playerChannelId = null;
         guildData.suggestions = [];
@@ -294,4 +298,76 @@ function setupPlayerHandler(client) {
     });
 }
 
-module.exports = { setupPlayerHandler };
+/**
+ * Start monitoring voice channel for auto-pause/resume functionality
+ */
+function startVoiceChannelMonitoring(client, guildId) {
+    const guildData = getGuildData(guildId);
+    
+    // Clear existing timeout
+    if (guildData.voiceStateTimeout) {
+        clearTimeout(guildData.voiceStateTimeout);
+    }
+    
+    // Check voice channel state every 5 seconds
+    guildData.voiceStateTimeout = setInterval(() => {
+        checkVoiceChannelState(client, guildId);
+    }, 5000);
+}
+
+/**
+ * Check voice channel state and pause/resume accordingly
+ */
+function checkVoiceChannelState(client, guildId) {
+    const guildData = getGuildData(guildId);
+    const player = client.riffy.players.get(guildId);
+    
+    if (!player || !player.voiceChannel) return;
+    
+    const voiceChannel = client.channels.cache.get(player.voiceChannel);
+    if (!voiceChannel) return;
+    
+    const membersInChannel = voiceChannel.members.filter(member => !member.user.bot);
+    const hasUsers = membersInChannel.size > 0;
+    
+    // Auto-pause when channel becomes empty
+    if (!hasUsers && !player.paused && player.playing) {
+        player.pause(true);
+        guildData.wasPaused = true;
+        
+        // Send notification to text channel
+        if (guildData.playerChannelId) {
+            const channel = client.channels.cache.get(guildData.playerChannelId);
+            if (channel) {
+                channel.send("⏸️ Music paused - voice channel is empty. I'll resume when someone joins!").catch(() => {});
+            }
+        }
+    }
+    
+    // Auto-resume when users rejoin
+    if (hasUsers && guildData.wasPaused && player.paused) {
+        player.pause(false);
+        guildData.wasPaused = false;
+        
+        // Send notification to text channel
+        if (guildData.playerChannelId) {
+            const channel = client.channels.cache.get(guildData.playerChannelId);
+            if (channel) {
+                channel.send("▶️ Music resumed - welcome back!").catch(() => {});
+            }
+        }
+    }
+}
+
+/**
+ * Stop voice channel monitoring
+ */
+function stopVoiceChannelMonitoring(guildId) {
+    const guildData = getGuildData(guildId);
+    if (guildData.voiceStateTimeout) {
+        clearTimeout(guildData.voiceStateTimeout);
+        guildData.voiceStateTimeout = null;
+    }
+}
+
+module.exports = { setupPlayerHandler, startVoiceChannelMonitoring, stopVoiceChannelMonitoring };

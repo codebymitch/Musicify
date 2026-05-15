@@ -19,6 +19,8 @@ class GuildData {
         this.queuePages = new Map(); // per-user queue page state
         this.updateInterval = null; // 15s musicard auto-update timer
         this.idleTimeout = null; // 30s disconnect timeout
+        this.voiceStateTimeout = null; // voice channel monitoring timeout
+        this.wasPaused = false; // track if music was paused due to empty channel
     }
 }
 

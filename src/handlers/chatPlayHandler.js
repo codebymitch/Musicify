@@ -74,6 +74,24 @@ async function handleChatPlayMessage(client, message) {
         // Set volume
         player.setVolume(guildData.volume);
 
+        // Update ChatPlay message to show loading state (only for first song)
+        if (!player.playing && !player.paused && !player.current) {
+            try {
+                const { createChatPlayLoadingContainer } = require("../utils/components");
+                const loadingContainer = createChatPlayLoadingContainer();
+                const channel = client.channels.cache.get(guildData.chatPlayChannelId);
+                if (channel && guildData.chatPlayMessageId) {
+                    const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
+                    await msg.edit({
+                        components: [loadingContainer],
+                        flags: MessageFlags.IsComponentsV2,
+                    });
+                }
+            } catch (err) {
+                // Ignore if message edit fails
+            }
+        }
+
         // Resolve the query
         const result = await client.riffy.resolve({
             query: query,
@@ -89,10 +107,34 @@ async function handleChatPlayMessage(client, message) {
             loadType === "playlist" ||
             loadType === "PLAYLIST_LOADED"
         ) {
+            const duplicates = [];
+            const addedTracks = [];
+            
             for (const track of tracks) {
                 track.info.requester = message.author;
-                player.queue.add(track);
+                
+                // Check for duplicates
+                const isDuplicate = player.queue.some(existingTrack => 
+                    existingTrack.info.uri === track.info.uri
+                ) || (player.current && player.current.info.uri === track.info.uri);
+                
+                if (isDuplicate) {
+                    duplicates.push(track.info.title || "Unknown");
+                } else {
+                    player.queue.add(track);
+                    addedTracks.push(track.info.title || "Unknown");
+                }
             }
+            
+            // Send feedback for playlist
+            try {
+                let feedbackMsg = `✅ Added **${addedTracks.length} tracks** to queue!`;
+                if (duplicates.length > 0) {
+                    feedbackMsg += `\n⚠️ Skipped ${duplicates.length} duplicates: ${duplicates.slice(0, 3).join(", ")}${duplicates.length > 3 ? "..." : ""}`;
+                }
+                const feedback = await message.channel.send({ content: feedbackMsg });
+                setTimeout(() => feedback.delete().catch(() => {}), 5000);
+            } catch (err) {}
             if (!player.playing && !player.paused && !player.current) player.play();
         } else if (
             loadType === "search" ||
@@ -105,8 +147,31 @@ async function handleChatPlayMessage(client, message) {
 
                 return true;
             }
+            
+            // Check for duplicate
+            const isDuplicate = player.queue.some(existingTrack => 
+                existingTrack.info.uri === track.info.uri
+            ) || (player.current && player.current.info.uri === track.info.uri);
+            
+            if (isDuplicate) {
+                try {
+                    const feedback = await message.channel.send({
+                        content: `⚠️ **${track.info.title}** is already in the queue!`
+                    });
+                    setTimeout(() => feedback.delete().catch(() => {}), 3000);
+                } catch (err) {}
+                return true;
+            }
+            
             track.info.requester = message.author;
             player.queue.add(track);
+            // Send feedback for single track
+            try {
+                const feedback = await message.channel.send({
+                    content: `✅ Added **${track.info.title}** to queue!`
+                });
+                setTimeout(() => feedback.delete().catch(() => {}), 3000);
+            } catch (err) {}
             if (!player.playing && !player.paused && !player.current) player.play();
         } else {
 

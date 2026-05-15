@@ -58,20 +58,38 @@ module.exports = {
                 loadType === "playlist" ||
                 loadType === "PLAYLIST_LOADED"
             ) {
+                const duplicates = [];
+                const addedTracks = [];
+                
                 for (const track of tracks) {
                     track.info.requester = interaction.user;
-                    player.queue.add(track);
+                    
+                    // Check for duplicates
+                    const isDuplicate = player.queue.some(existingTrack => 
+                        existingTrack.info.uri === track.info.uri
+                    ) || (player.current && player.current.info.uri === track.info.uri);
+                    
+                    if (isDuplicate) {
+                        duplicates.push(track.info.title || "Unknown");
+                    } else {
+                        player.queue.add(track);
+                        addedTracks.push(track.info.title || "Unknown");
+                    }
+                }
+
+                let content = "### ✅ Playlist Added\n\n" +
+                    "**Playlist**\n" +
+                    `-# ${playlistInfo.name}\n\n` +
+                    "**Tracks**\n" +
+                    `-# ${addedTracks.length} songs added to queue`;
+                    
+                if (duplicates.length > 0) {
+                    content += `\n\n⚠️ **Duplicates Skipped**\n-# ${duplicates.length} songs already in queue`;
                 }
 
                 const container = new ContainerBuilder();
                 container.addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(
-                        "### ✅ Playlist Added\n\n" +
-                        "**Playlist**\n" +
-                        `-# ${playlistInfo.name}\n\n` +
-                        "**Tracks**\n" +
-                        `-# ${tracks.length} songs added to queue`
-                    )
+                    new TextDisplayBuilder().setContent(content)
                 );
                 await interaction.editReply({
                     components: [container],
@@ -89,6 +107,29 @@ module.exports = {
                 if (!track) {
                     return interaction.editReply({ content: "❌ No results found." });
                 }
+                
+                // Check for duplicate
+                const isDuplicate = player.queue.some(existingTrack => 
+                    existingTrack.info.uri === track.info.uri
+                ) || (player.current && player.current.info.uri === track.info.uri);
+                
+                if (isDuplicate) {
+                    const container = new ContainerBuilder();
+                    container.addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            "### ⚠️ Duplicate Detected\n\n" +
+                            "**Track**\n" +
+                            `-# ${track.info.title}\n\n` +
+                            "**Status**\n" +
+                            `-# Already in queue or currently playing`
+                        )
+                    );
+                    return await interaction.editReply({
+                        components: [container],
+                        flags: MessageFlags.IsComponentsV2,
+                    });
+                }
+                
                 track.info.requester = interaction.user;
                 player.queue.add(track);
 
