@@ -1,9 +1,10 @@
 const { MessageFlags, AttachmentBuilder, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
-const { getGuildData, clearUpdateInterval } = require("../utils/playerStore");
+const { getGuildData, clearUpdateInterval, clearVoiceMonitor, resetPlayerState } = require("../utils/playerStore");
 const { createNowPlayingContainer, createChatPlayIdleContainer, createChatPlayNowPlayingContainer } = require("../utils/components");
 const { generateMusicCard } = require("../utils/musicard");
 const { recordIncident } = require("../utils/incidents");
 const { scheduleStatusUpdate } = require("../services/statusMonitor");
+const { cleanupPlayerUI } = require("../utils/cleanup");
 const config = require("../../config");
 
 const UPDATE_INTERVAL_MS = 15 * 1000; // 15 seconds
@@ -248,8 +249,14 @@ function setupPlayerHandler(client) {
         try {
             const guildData = getGuildData(player.guildId);
 
+            if (guildData.isStopping) {
+                return;
+            }
+
             // Stop the auto-update interval
             clearUpdateInterval(guildData);
+            // Stop voice channel monitoring on queue end
+            stopVoiceChannelMonitoring(player.guildId);
 
             if (guildData.autoplay) {
                 player.autoplay(player);
@@ -259,36 +266,8 @@ function setupPlayerHandler(client) {
             // 24/7 mode: stay in VC, just update the message
             const stayInVC = guildData.twentyFourSeven;
 
-            // If this is a ChatPlay session, edit the message to idle state
-            if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
-                const container = createChatPlayIdleContainer();
-                const channel = client.channels.cache.get(guildData.chatPlayChannelId);
-                if (channel) {
-                    try {
-                        const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
-                        await msg.edit({
-                            components: [container],
-                            attachments: [],
-                            flags: MessageFlags.IsComponentsV2,
-                        });
-                    } catch (err) {
-                        // message deleted
-                    }
-                }
-            } else if (guildData.playerMessageId && guildData.playerChannelId) {
-                // For regular /play: delete the old message
-                try {
-                    const channel = client.channels.cache.get(guildData.playerChannelId);
-                    if (channel) {
-                        const msg = await channel.messages.fetch(guildData.playerMessageId);
-                        await msg.delete();
-                    }
-                } catch (err) {
-                    // message already deleted
-                }
-                guildData.playerMessageId = null;
-                guildData.playerChannelId = null;
-            }
+            // Clean up player UI using shared utility
+            await cleanupPlayerUI(client, guildData);
 
             // If NOT 24/7, disconnect after a delay
             if (!stayInVC) {
@@ -319,46 +298,12 @@ function setupPlayerHandler(client) {
     // --- Player Disconnect ---
     client.riffy.on("playerDisconnect", async (player) => {
         const guildData = getGuildData(player.guildId);
-        clearUpdateInterval(guildData);
-        stopVoiceChannelMonitoring(player.guildId);
         
-        // Reset ChatPlay to idle if active (safety net for force disconnects)
-        if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
-            try {
-                const { createChatPlayIdleContainer } = require("../utils/components");
-                const { MessageFlags } = require("discord.js");
-                const channel = client.channels.cache.get(guildData.chatPlayChannelId);
-                if (channel) {
-                    const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
-                    await msg.edit({
-                        components: [createChatPlayIdleContainer()],
-                        attachments: [],
-                        flags: MessageFlags.IsComponentsV2,
-                    });
-                }
-            } catch (err) {
-                // message may have been deleted
-            }
-        }
-        // Delete regular player message if it exists (normal /play sessions)
-        else if (guildData.playerMessageId && guildData.playerChannelId) {
-            try {
-                const channel = client.channels.cache.get(guildData.playerChannelId);
-                if (channel) {
-                    const msg = await channel.messages.fetch(guildData.playerMessageId);
-                    await msg.delete();
-                }
-            } catch (err) {
-                // message already deleted
-            }
-        }
+        // Clean up UI
+        await cleanupPlayerUI(client, guildData);
         
-        guildData.playerMessageId = null;
-        guildData.playerChannelId = null;
-        guildData.suggestions = [];
-        guildData.previousTracks = [];
-        if (guildData.idleTimeout) clearTimeout(guildData.idleTimeout);
-        guildData.idleTimeout = null;
+        // Reset player state (timers, suggestions, history, etc.)
+        resetPlayerState(guildData);
     });
 
     // --- Track Error / Stuck ---
@@ -391,13 +336,13 @@ function setupPlayerHandler(client) {
 function startVoiceChannelMonitoring(client, guildId) {
     const guildData = getGuildData(guildId);
     
-    // Clear existing timeout
-    if (guildData.voiceStateTimeout) {
-        clearTimeout(guildData.voiceStateTimeout);
+    // Clear existing interval
+    if (guildData.voiceMonitorInterval) {
+        clearInterval(guildData.voiceMonitorInterval);
     }
     
     // Check voice channel state every 5 seconds
-    guildData.voiceStateTimeout = setInterval(() => {
+    guildData.voiceMonitorInterval = setInterval(() => {
         checkVoiceChannelState(client, guildId);
     }, 5000);
 }
@@ -435,8 +380,8 @@ function checkVoiceChannelState(client, guildId) {
         }
     }
 
-    // Auto-resume when users rejoin
-    if (hasUsers && guildData.wasPaused && player.paused) {
+    // Auto-resume when users rejoin (only if NOT manually paused by a user)
+    if (hasUsers && guildData.wasPaused && player.paused && !guildData.manuallyPaused) {
         player.pause(false);
         guildData.wasPaused = false;
 
@@ -459,9 +404,9 @@ function checkVoiceChannelState(client, guildId) {
  */
 function stopVoiceChannelMonitoring(guildId) {
     const guildData = getGuildData(guildId);
-    if (guildData.voiceStateTimeout) {
-        clearTimeout(guildData.voiceStateTimeout);
-        guildData.voiceStateTimeout = null;
+    if (guildData.voiceMonitorInterval) {
+        clearInterval(guildData.voiceMonitorInterval);
+        guildData.voiceMonitorInterval = null;
     }
 }
 

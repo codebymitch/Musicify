@@ -2,6 +2,7 @@ const {
     ContainerBuilder,
     TextDisplayBuilder,
     SeparatorBuilder,
+    SectionBuilder,
     ActionRowBuilder,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder,
@@ -65,64 +66,57 @@ function buildStatusContainer(client, { interactive = true, showSupportButton = 
 
     const container = new ContainerBuilder();
 
+    // --- Status header ---
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(`## ${statusEmoji} ${statusText}`)
     );
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            `**Recent Incidents**\n` + formatIncidents(4)
+    // --- Incidents section with Support/Report button accessory ---
+    const incidentsSection = new SectionBuilder()
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `**Recent Incidents**\n` + formatIncidents(4)
+            )
         )
-    );
+        .setButtonAccessory(
+            showSupportButton
+                ? new ButtonBuilder()
+                      .setLabel("Support")
+                      .setURL("https://discord.gg/MRjEUhDCpZ")
+                      .setStyle(ButtonStyle.Link)
+                : new ButtonBuilder()
+                      .setLabel("🐛 Report")
+                      .setURL("https://github.com/codebymitch/Musicify/issues")
+                      .setStyle(ButtonStyle.Link)
+        );
 
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
-
-    const linkButtons = showSupportButton
-        ? [
-              new ButtonBuilder()
-                  .setLabel("Support Server")
-                  .setURL("https://discord.gg/MRjEUhDCpZ")
-                  .setStyle(ButtonStyle.Link),
-              new ButtonBuilder()
-                  .setLabel("Vote")
-                  .setEmoji("⭐")
-                  .setURL("https://top.gg/bot/1502977716196999309/vote")
-                  .setStyle(ButtonStyle.Link),
-          ]
-        : [
-              new ButtonBuilder()
-                  .setLabel("Report Issue")
-                  .setEmoji("🐛")
-                  .setURL("https://github.com/codebymitch/Musicify/issues")
-                  .setStyle(ButtonStyle.Link),
-              new ButtonBuilder()
-                  .setLabel("Vote")
-                  .setEmoji("⭐")
-                  .setURL("https://top.gg/bot/1502977716196999309/vote")
-                  .setStyle(ButtonStyle.Link),
-              new ButtonBuilder()
-                  .setLabel("Suggest")
-                  .setEmoji("💡")
-                  .setURL("https://discord.com/channels/1503210009251545152/1503721044291092480")
-                  .setStyle(ButtonStyle.Link),
-          ];
-
-    container.addActionRowComponents(new ActionRowBuilder().addComponents(...linkButtons));
-
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
-
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            `**Uptime**\n` +
-            `-# 🕒 <t:${startTimestamp}:f> (<t:${startTimestamp}:R>)\n` +
-            `-# *Times shown in your local timezone*`
-        )
-    );
+    container.addSectionComponents(incidentsSection);
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
+    // --- Uptime section with Vote button accessory ---
+    const uptimeSection = new SectionBuilder()
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `**Uptime**\n` +
+                `-# 🕒 <t:${startTimestamp}:f> (<t:${startTimestamp}:R>)\n` +
+                `-# *Times shown in your local timezone*`
+            )
+        )
+        .setButtonAccessory(
+            new ButtonBuilder()
+                .setLabel("⭐ Vote")
+                .setURL("https://top.gg/bot/1502977716196999309/vote")
+                .setStyle(ButtonStyle.Link)
+        );
+
+    container.addSectionComponents(uptimeSection);
+
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+
+    // --- Lavalink Node Stats ---
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
             "### Lavalink Node Stats\n" +

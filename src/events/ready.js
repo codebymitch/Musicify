@@ -108,19 +108,44 @@ module.exports = {
                 if (settings.twentyFourSeven) {
                     guildData.twentyFourSeven = true;
                 }
+
+                // Restore default voice channel
+                if (settings.defaultVoiceChannel) {
+                    guildData.defaultVoiceChannel = settings.defaultVoiceChannel;
+                }
             }
 
-            if (restoredCount > 0) {
-                console.log(`[Musicify] Restored ChatPlay for ${restoredCount} guild(s) from database.`);
+            if (restoredCount > 0 || Object.values(db).some(s => s.defaultVoiceChannel)) {
+                console.log(`[Musicify] Restored ChatPlay / Onboard settings from database.`);
                 if (invalidMessages > 0) {
                     console.log(`[Musicify] Recreated ${invalidMessages} invalid ChatPlay message(s).`);
                 }
                 
                 // Update existing ChatPlay messages if bot was restarted during playback
+                // and auto-join predefined voice channels if set
                 setTimeout(async () => {
                     for (const [guildId, settings] of Object.entries(db)) {
+                        const guildData = getGuildData(guildId);
+
+                        // Auto-join default voice channel if configured
+                        if (guildData.defaultVoiceChannel) {
+                            try {
+                                const player = client.riffy.players.get(guildId);
+                                if (!player) {
+                                    client.riffy.createConnection({
+                                        guildId: guildId,
+                                        voiceChannel: guildData.defaultVoiceChannel,
+                                        textChannel: guildData.chatPlayChannelId || settings.chatPlayChannelId || guild.channels.cache.filter(c => c.type === 0).first()?.id,
+                                        deaf: true,
+                                    });
+                                    console.log(`[Musicify] Auto-joined default VC <#${guildData.defaultVoiceChannel}> in guild ${guildId}`);
+                                }
+                            } catch (err) {
+                                console.error(`[Musicify] Failed to auto-join VC in guild ${guildId}:`, err.message);
+                            }
+                        }
+
                         if (settings.chatPlayChannelId && settings.chatPlayEnabled) {
-                            const guildData = getGuildData(guildId);
                             const player = client.riffy.players.get(guildId);
                             
                             // If player exists and is playing, update the ChatPlay message
@@ -156,7 +181,7 @@ module.exports = {
                             }
                         }
                     }
-                }, 2000); // Wait 2 seconds for Lavalink to be fully connected
+                }, 3000); // Wait 3 seconds for Lavalink to be fully connected
             }
         } catch (err) {
             console.error("[Musicify] Failed to restore from database:", err.message);

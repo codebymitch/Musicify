@@ -35,26 +35,23 @@ module.exports = {
 
         container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                "**What is Musicify?**\n" +
-                "-# A ChatPlay-focused Discord music bot that delivers high-quality\n" +
-                "-# music streaming directly to your voice channels.\n\n" +
-                "**Powered By**\n" +
-                "-# [discord.js](https://discord.js.org/) · [Riffy](https://riffy.js.org/) · [Musicard](https://www.npmjs.com/package/musicard)\n\n" +
-                "**Features**\n" +
-                "-# • **Rich now-playing cards** with progress bars\n" +
-                "-# • **10+ audio filter** presets\n" +
-                "-# • **Smart queue management** with pagination\n" +
-                "-# • **ChatPlay** — instant song requests\n" +
-                "-# • **Interactive button-based** controls"
-            )
-        );
-
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                "-# Musicify is [open source](https://github.com/codebymitch/Musicify). Built by a passionate team of developers."
-            )
+        // Package and dependencies section with ButtonAccessory
+        container.addSectionComponents(
+            new SectionBuilder()
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        "**Powered By**\n" +
+                        "-# • [discord.js](https://discord.js.org/)\n" +
+                        "-# • [Riffy](https://riffy.js.org/)\n" +
+                        "-# • [Musicard](https://www.npmjs.com/package/musicard)"
+                    )
+                )
+                .addButtonAccessory(
+                    new ButtonBuilder()
+                        .setLabel("Source Code")
+                        .setURL("https://github.com/codebymitch/Musicify")
+                        .setStyle(ButtonStyle.Link)
+                )
         );
 
         container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));

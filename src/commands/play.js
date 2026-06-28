@@ -26,12 +26,20 @@ module.exports = {
             });
         }
 
+        // Create or get player
+        let player = client.riffy.players.get(interaction.guild.id);
+        if (player && member.voice.channel.id !== player.voiceChannel) {
+            return interaction.reply({
+                content: "❌ You need to be in the same voice channel as the bot!",
+                flags: MessageFlags.Ephemeral,
+            });
+        }
+
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const guildData = getGuildData(interaction.guild.id);
 
         // Create or get player
-        let player = client.riffy.players.get(interaction.guild.id);
         if (!player) {
             player = client.riffy.createConnection({
                 guildId: interaction.guild.id,

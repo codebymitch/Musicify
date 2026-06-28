@@ -39,8 +39,9 @@ module.exports = {
         if (!player || !player.current) {
             return interaction.reply({ content: "❌ Nothing is playing right now.", flags: MessageFlags.Ephemeral });
         }
-        if (!interaction.member.voice?.channel) {
-            return interaction.reply({ content: "❌ You need to be in a voice channel!", flags: MessageFlags.Ephemeral });
+        const { canControlMusic, VOICE_CHANNEL_DENIAL } = require("../utils/permissions");
+        if (!canControlMusic(interaction.member, player)) {
+            return interaction.reply({ content: VOICE_CHANNEL_DENIAL, flags: MessageFlags.Ephemeral });
         }
 
         const preset = interaction.options.getString("preset");

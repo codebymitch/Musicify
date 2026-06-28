@@ -1,10 +1,37 @@
-const { MessageFlags, AttachmentBuilder } = require("discord.js");
-const { getGuildData, clearUpdateInterval } = require("../utils/playerStore");
+const { MessageFlags, AttachmentBuilder, ChannelType } = require("discord.js");
+const { getGuildData, clearUpdateInterval, resetPlayerState } = require("../utils/playerStore");
 const { createNowPlayingContainer, createChatPlayNowPlayingContainer, createQueueContainer, createChatPlayIdleContainer } = require("../utils/components");
 const { generateMusicCard } = require("../utils/musicard");
 const { addNodeDetails } = require("../utils/nodeDetails");
 const { canControlMusic, VOICE_CHANNEL_DENIAL } = require("../utils/permissions");
+const { cleanupPlayerUI } = require("../utils/cleanup");
+const { setGuildSetting, deleteGuildSetting } = require("../utils/database");
 const config = require("../../config");
+
+/**
+ * Cache for application command IDs — populated once, reused everywhere.
+ */
+let cachedCommands = null;
+let commandCacheExpiry = 0;
+
+async function getCachedCommands(client) {
+    const now = Date.now();
+    // Re-fetch every 30 minutes
+    if (cachedCommands && now < commandCacheExpiry) return cachedCommands;
+    try {
+        cachedCommands = await client.application.commands.fetch();
+        commandCacheExpiry = now + 30 * 60 * 1000;
+    } catch (e) {
+        cachedCommands = null;
+    }
+    return cachedCommands;
+}
+
+function getCmd(commands, name, subcommand = null) {
+    const cmd = commands?.find(c => c.name === name);
+    if (!cmd) return subcommand ? `\`/${name} ${subcommand}\`` : `\`/${name}\``;
+    return subcommand ? `</${name} ${subcommand}:${cmd.id}>` : `</${name}:${cmd.id}>`;
+}
 
 /**
  * Handle all button and select menu interactions from the player container
@@ -15,19 +42,9 @@ async function handleButtonInteraction(client, interaction) {
         return;
     }
 
-    // Fetch commands for IDs
-    let commands;
-    try {
-        commands = await client.application.commands.fetch();
-    } catch (e) {
-        commands = null;
-    }
-    
-    const getCmd = (name, subcommand = null) => {
-        const cmd = commands?.find(c => c.name === name);
-        if (!cmd) return subcommand ? `\`/${name} ${subcommand}\`` : `\`/${name}\``;
-        return subcommand ? `</${name} ${subcommand}:${cmd.id}>` : `</${name}:${cmd.id}>`;
-    };
+    const commands = await getCachedCommands(client);
+    const cmd = (name, sub) => getCmd(commands, name, sub);
+
     const guildId = interaction.guild.id;
     let player = client.riffy.players.get(guildId);
     const guildData = getGuildData(guildId);
@@ -43,7 +60,6 @@ async function handleButtonInteraction(client, interaction) {
                     textChannel: guildData.chatPlayChannelId,
                     deaf: true,
                 });
-                // Restore volume
                 player.setVolume(guildData.volume);
                 console.log(`[Musicify] Recreated player for guild ${guildId} after restart`);
             } catch (err) {
@@ -52,18 +68,203 @@ async function handleButtonInteraction(client, interaction) {
         }
     }
 
-    // Handle node stats dropdown - show dedicated node details view
+    // ─── Onboard: Text Channel Select ─────────────────────────────
+    if (interaction.isChannelSelectMenu() && interaction.customId === "onboard_text_select") {
+        await interaction.deferUpdate();
+
+        const selectedChannelId = interaction.values[0];
+
+        // Delete old ChatPlay message if it exists
+        if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
+            try {
+                const oldChannel = client.channels.cache.get(guildData.chatPlayChannelId);
+                if (oldChannel) {
+                    const oldMsg = await oldChannel.messages.fetch(guildData.chatPlayMessageId);
+                    await oldMsg.delete();
+                }
+            } catch (err) { /* ignore */ }
+        }
+
+        // Send new ChatPlay idle message in selected channel
+        const selectedChannel = client.channels.cache.get(selectedChannelId);
+        if (selectedChannel) {
+            try {
+                const idleContainer = createChatPlayIdleContainer();
+                const chatMsg = await selectedChannel.send({
+                    components: [idleContainer],
+                    flags: MessageFlags.IsComponentsV2,
+                });
+
+                // Set slowmode
+                try {
+                    await selectedChannel.setRateLimitPerUser(5, "ChatPlay setup - prevents spam");
+                } catch (err) { /* may lack permission */ }
+
+                guildData.chatPlayChannelId = selectedChannelId;
+                guildData.chatPlayMessageId = chatMsg.id;
+                guildData.chatPlayEnabled = true;
+                guildData.playerChannelId = selectedChannelId;
+
+                setGuildSetting(guildId, "chatPlayChannelId", selectedChannelId);
+                setGuildSetting(guildId, "chatPlayMessageId", chatMsg.id);
+                setGuildSetting(guildId, "chatPlayEnabled", true);
+            } catch (err) {
+                console.error("[Musicify] Onboard text setup error:", err.message);
+            }
+        }
+
+        // Refresh the panel
+        const { buildOnboardPanel } = require("../commands/onboard");
+        try {
+            await interaction.editReply({
+                components: [buildOnboardPanel(client, guildData)],
+                flags: MessageFlags.IsComponentsV2,
+            });
+        } catch (err) { /* ignore */ }
+        return;
+    }
+
+    // ─── Onboard: Voice Channel Select ────────────────────────────
+    if (interaction.isChannelSelectMenu() && interaction.customId === "onboard_voice_select") {
+        await interaction.deferUpdate();
+
+        const selectedVcId = interaction.values[0];
+        guildData.defaultVoiceChannel = selectedVcId;
+        setGuildSetting(guildId, "defaultVoiceChannel", selectedVcId);
+
+        // If 24/7 is enabled, join the VC immediately
+        if (guildData.twentyFourSeven) {
+            try {
+                const textChannel = guildData.chatPlayChannelId || interaction.channel.id;
+                let existingPlayer = client.riffy.players.get(guildId);
+                if (!existingPlayer) {
+                    client.riffy.createConnection({
+                        guildId: guildId,
+                        voiceChannel: selectedVcId,
+                        textChannel: textChannel,
+                        deaf: true,
+                    });
+                }
+            } catch (err) {
+                console.error("[Musicify] Failed to join VC on onboard:", err.message);
+            }
+        }
+
+        // Refresh the panel
+        const { buildOnboardPanel } = require("../commands/onboard");
+        try {
+            await interaction.editReply({
+                components: [buildOnboardPanel(client, guildData)],
+                flags: MessageFlags.IsComponentsV2,
+            });
+        } catch (err) { /* ignore */ }
+        return;
+    }
+
+    // ─── Onboard: 24/7 Toggle ─────────────────────────────────────
+    if (interaction.isButton() && interaction.customId === "onboard_247") {
+        await interaction.deferUpdate();
+
+        const newState = !guildData.twentyFourSeven;
+        guildData.twentyFourSeven = newState;
+        setGuildSetting(guildId, "twentyFourSeven", newState);
+
+        if (newState && guildData.defaultVoiceChannel) {
+            // Join the VC
+            try {
+                let existingPlayer = client.riffy.players.get(guildId);
+                if (!existingPlayer) {
+                    const textChannel = guildData.chatPlayChannelId || interaction.channel.id;
+                    client.riffy.createConnection({
+                        guildId: guildId,
+                        voiceChannel: guildData.defaultVoiceChannel,
+                        textChannel: textChannel,
+                        deaf: true,
+                    });
+                }
+            } catch (err) {
+                console.error("[Musicify] Failed to join VC on 24/7 enable:", err.message);
+            }
+        } else if (!newState) {
+            // If not playing anything, disconnect
+            const existingPlayer = client.riffy.players.get(guildId);
+            if (existingPlayer && !existingPlayer.playing && !existingPlayer.paused) {
+                existingPlayer.destroy();
+            }
+        }
+
+        // Refresh the panel
+        const { buildOnboardPanel } = require("../commands/onboard");
+        try {
+            await interaction.editReply({
+                components: [buildOnboardPanel(client, guildData)],
+                flags: MessageFlags.IsComponentsV2,
+            });
+        } catch (err) { /* ignore */ }
+        return;
+    }
+
+    // ─── Onboard: Reset ───────────────────────────────────────────
+    if (interaction.isButton() && interaction.customId === "onboard_reset") {
+        await interaction.deferUpdate();
+
+        // Delete ChatPlay message
+        if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
+            try {
+                const channel = client.channels.cache.get(guildData.chatPlayChannelId);
+                if (channel) {
+                    const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
+                    await msg.delete();
+                }
+            } catch (err) { /* ignore */ }
+
+            // Remove slowmode
+            try {
+                const channel = client.channels.cache.get(guildData.chatPlayChannelId);
+                if (channel) await channel.setRateLimitPerUser(0, "ChatPlay removed");
+            } catch (err) { /* ignore */ }
+        }
+
+        // Clear state
+        guildData.chatPlayChannelId = null;
+        guildData.chatPlayMessageId = null;
+        guildData.chatPlayEnabled = false;
+        guildData.defaultVoiceChannel = null;
+        guildData.twentyFourSeven = false;
+
+        // Clear database
+        deleteGuildSetting(guildId, "chatPlayChannelId");
+        deleteGuildSetting(guildId, "chatPlayMessageId");
+        deleteGuildSetting(guildId, "chatPlayEnabled");
+        deleteGuildSetting(guildId, "defaultVoiceChannel");
+        deleteGuildSetting(guildId, "twentyFourSeven");
+
+        // Disconnect if not playing
+        const existingPlayer = client.riffy.players.get(guildId);
+        if (existingPlayer && !existingPlayer.playing && !existingPlayer.paused) {
+            existingPlayer.destroy();
+        }
+
+        // Refresh the panel
+        const { buildOnboardPanel } = require("../commands/onboard");
+        try {
+            await interaction.editReply({
+                components: [buildOnboardPanel(client, guildData)],
+                flags: MessageFlags.IsComponentsV2,
+            });
+        } catch (err) { /* ignore */ }
+        return;
+    }
+
+    // ─── Node Stats Dropdown ──────────────────────────────────────
     if (interaction.isStringSelectMenu() && interaction.customId === "node_stats_select") {
         await interaction.deferUpdate();
 
-        const selectedValue = interaction.values[0]; // "node_0", "node_1", etc
+        const selectedValue = interaction.values[0];
         const nodeIndex = parseInt(selectedValue.replace("node_", ""), 10);
-
-        // Get configured node from config (source of truth)
         const configNode = config.nodes[nodeIndex];
         if (!configNode) return;
 
-        // Find connected node if available
         const nodes = client.riffy.nodeMap;
         const nodeList = Array.isArray(nodes)
             ? nodes
@@ -77,13 +278,9 @@ async function handleButtonInteraction(client, interaction) {
 
         const statusEmoji = connected ? "🟢" : "🔴";
         const statusText = connected ? "Connected" : "Disconnected";
-
         const container = new ContainerBuilder();
-
-        // Use generic name in header
         const displayName = nodeIndex === 0 ? "Main Node" : `Node ${nodeIndex}`;
 
-        // Node header
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 `## ${statusEmoji} ${displayName}\n` +
@@ -95,9 +292,7 @@ async function handleButtonInteraction(client, interaction) {
 
         if (!connected || !connectedNode?.stats) {
             container.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(
-                    "-# *Node is offline — no stats available.*"
-                )
+                new TextDisplayBuilder().setContent("-# *Node is offline — no stats available.*")
             );
         } else {
             const stats = connectedNode.stats;
@@ -118,7 +313,6 @@ async function handleButtonInteraction(client, interaction) {
 
         container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
 
-        // Back button
         const backButton = new ButtonBuilder()
             .setCustomId("status_back")
             .setEmoji("⬅️")
@@ -137,107 +331,12 @@ async function handleButtonInteraction(client, interaction) {
         return;
     }
 
-    // Handle status back button - return to main status view
+    // ─── Status Back Button ───────────────────────────────────────
     if (interaction.isButton() && interaction.customId === "status_back") {
         await interaction.deferUpdate();
 
-        const { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
-        const { formatIncidents } = require("../utils/incidents");
-
-        const nodes = client.riffy.nodeMap;
-        const nodeList = Array.isArray(nodes)
-            ? nodes
-            : nodes instanceof Map
-              ? [...nodes.values()]
-              : Object.values(nodes || {});
-
-        const connectedNodes = nodeList.filter(n => n.connected || n.isConnected).length;
-        const totalNodes = config.nodes.length;
-        const botPing = client.ws?.ping ?? 0;
-        const uptimeSeconds = process.uptime();
-        const startTime = new Date(Date.now() - uptimeSeconds * 1000);
-
-        let statusEmoji = "🟢";
-        let statusText = "All systems operational";
-        if (connectedNodes === 0 || botPing > 300) {
-            statusEmoji = "🔴";
-            statusText = "Major system issues detected";
-        } else if (connectedNodes < totalNodes || botPing > 100) {
-            statusEmoji = "🟡";
-            statusText = "Some systems experiencing issues";
-        }
-
-        const container = new ContainerBuilder();
-
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`## ${statusEmoji} ${statusText}`)
-        );
-
-        container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `**Recent Incidents**\n` +
-                formatIncidents(4)
-            )
-        );
-
-        container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
-
-        const supportButton = new ButtonBuilder()
-            .setLabel("Known Outages")
-            .setURL("https://discord.gg/MRjEUhDCpZ")
-            .setStyle(ButtonStyle.Link);
-
-        const voteButton = new ButtonBuilder()
-            .setLabel("⭐ Vote")
-            .setURL("https://top.gg/bot/1502977716196999309/vote")
-            .setStyle(ButtonStyle.Link);
-
-        container.addActionRowComponents(new ActionRowBuilder().addComponents(supportButton, voteButton));
-
-        container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
-
-        const startTimestamp = Math.floor(startTime.getTime() / 1000);
-
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `**Uptime**\n` +
-                `-# 🕒 <t:${startTimestamp}:f> (<t:${startTimestamp}:R>)\n` +
-                `-# *Times shown in your local timezone*`
-            )
-        );
-
-        container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                "### Lavalink Node Stats\n" +
-                `-# ${connectedNodes}/${totalNodes} nodes available`
-            )
-        );
-
-        const selectMenu = new StringSelectMenuBuilder()
-            .setCustomId("node_stats_select")
-            .setPlaceholder("📡 Select a node")
-            .setMinValues(1)
-            .setMaxValues(1);
-
-        for (let i = 0; i < config.nodes.length; i++) {
-            const configNode = config.nodes[i];
-            const connectedNode = nodeList.find(n => n.name === configNode.name);
-            const connected = connectedNode?.connected || connectedNode?.isConnected || false;
-            const nodeStatusEmoji = connected ? "🟢" : "🔴";
-            const displayName = i === 0 ? "Main Node" : `Node ${i}`;
-            selectMenu.addOptions(
-                new StringSelectMenuOptionBuilder()
-                    .setLabel(displayName)
-                    .setDescription(`${nodeStatusEmoji} ${connected ? "Connected" : "Disconnected"}`)
-                    .setValue(`node_${i}`)
-            );
-        }
-
-        container.addActionRowComponents(new ActionRowBuilder().addComponents(selectMenu));
+        const { buildStatusContainer } = require("../utils/statusPage");
+        const container = buildStatusContainer(client);
 
         try {
             await interaction.editReply({
@@ -250,7 +349,7 @@ async function handleButtonInteraction(client, interaction) {
         return;
     }
 
-    // Handle help dropdown navigation
+    // ─── Help Dropdown Navigation ─────────────────────────────────
     if (interaction.isStringSelectMenu() && interaction.customId === "help_select") {
         await interaction.deferUpdate();
 
@@ -269,10 +368,10 @@ async function handleButtonInteraction(client, interaction) {
         return;
     }
 
-    // Handle song suggestion select menu
+    // ─── Song Suggestion Select Menu ──────────────────────────────
     if (interaction.isStringSelectMenu() && interaction.customId === "song_suggestion") {
         if (!player) {
-            return interaction.reply({ content: `❌ No music playing. Start with ${getCmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: `❌ No music playing. Start with ${cmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
         }
         if (!canControlMusic(interaction.member, player)) {
             return interaction.reply({ content: VOICE_CHANNEL_DENIAL, flags: MessageFlags.Ephemeral });
@@ -294,7 +393,7 @@ async function handleButtonInteraction(client, interaction) {
         return;
     }
 
-    // Handle buttons
+    // ─── Buttons ──────────────────────────────────────────────────
     if (!interaction.isButton()) return;
 
     const customId = interaction.customId;
@@ -302,18 +401,14 @@ async function handleButtonInteraction(client, interaction) {
     // Queue button opens an ephemeral reply
     if (customId === "queue") {
         if (!player || !player.current) {
-            return interaction.reply({ content: `❌ No music playing. Start with ${getCmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: `❌ No music playing. Start with ${cmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
         }
         if (!canControlMusic(interaction.member, player)) {
             return interaction.reply({ content: VOICE_CHANNEL_DENIAL, flags: MessageFlags.Ephemeral });
         }
         if (!guildData.queuePages) guildData.queuePages = new Map();
         guildData.queuePages.set(interaction.user.id, 0);
-        const queueContainer = createQueueContainer(
-            player.queue,
-            player.current,
-            0
-        );
+        const queueContainer = createQueueContainer(player.queue, player.current, 0);
         return interaction.reply({
             components: [queueContainer],
             flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
@@ -323,7 +418,7 @@ async function handleButtonInteraction(client, interaction) {
     // Queue pagination buttons
     if (customId.startsWith("queue_") && customId !== "queue") {
         if (!player || !player.current) {
-            return interaction.reply({ content: `❌ No music playing. Start with ${getCmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: `❌ No music playing. Start with ${cmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
         }
         if (!canControlMusic(interaction.member, player)) {
             return interaction.reply({ content: VOICE_CHANNEL_DENIAL, flags: MessageFlags.Ephemeral });
@@ -338,27 +433,15 @@ async function handleButtonInteraction(client, interaction) {
         let currentPage = guildData.queuePages.get(interaction.user.id) || 0;
 
         switch (customId) {
-            case "queue_first":
-                currentPage = 0;
-                break;
-            case "queue_prev":
-                currentPage = Math.max(0, currentPage - 1);
-                break;
-            case "queue_next":
-                currentPage = Math.min(totalPages - 1, currentPage + 1);
-                break;
-            case "queue_last":
-                currentPage = totalPages - 1;
-                break;
+            case "queue_first": currentPage = 0; break;
+            case "queue_prev": currentPage = Math.max(0, currentPage - 1); break;
+            case "queue_next": currentPage = Math.min(totalPages - 1, currentPage + 1); break;
+            case "queue_last": currentPage = totalPages - 1; break;
         }
 
         guildData.queuePages.set(interaction.user.id, currentPage);
 
-        const queueContainer = createQueueContainer(
-            player.queue,
-            player.current,
-            currentPage
-        );
+        const queueContainer = createQueueContainer(player.queue, player.current, currentPage);
 
         try {
             await interaction.editReply({
@@ -371,10 +454,10 @@ async function handleButtonInteraction(client, interaction) {
         return;
     }
 
-    // Most buttons need an active player — send ephemeral if not
+    // Most buttons need an active player
     const needsPlayer = ["pause_resume", "skip", "previous", "stop", "shuffle", "loop", "autoplay", "vol_up", "vol_down"];
     if (needsPlayer.includes(customId) && !player) {
-        return interaction.reply({ content: `❌ No music playing. Start with ${getCmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
+        return interaction.reply({ content: `❌ No music playing. Start with ${cmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
     }
 
     if (needsPlayer.includes(customId) && !canControlMusic(interaction.member, player)) {
@@ -390,8 +473,10 @@ async function handleButtonInteraction(client, interaction) {
         case "pause_resume": {
             if (player.paused) {
                 player.pause(false);
+                guildData.manuallyPaused = false;
             } else {
                 player.pause(true);
+                guildData.manuallyPaused = true;
             }
             needsVisualUpdate = true;
             break;
@@ -420,7 +505,6 @@ async function handleButtonInteraction(client, interaction) {
             const isChatPlay = guildData.chatPlayChannelId && guildData.chatPlayMessageId;
             if (isChatPlay && queueLength >= 5 && !guildData.stopConfirmPending) {
                 guildData.stopConfirmPending = interaction.user.id;
-                // Clear confirmation after 15 seconds
                 setTimeout(() => {
                     if (guildData.stopConfirmPending === interaction.user.id) {
                         guildData.stopConfirmPending = null;
@@ -433,52 +517,25 @@ async function handleButtonInteraction(client, interaction) {
             }
             guildData.stopConfirmPending = null;
 
-            clearUpdateInterval(guildData);
-            if (guildData.idleTimeout) {
-                clearTimeout(guildData.idleTimeout);
-                guildData.idleTimeout = null;
-            }
-            guildData.suggestions = [];
-            guildData.previousTracks = [];
+            // Set stopping flag to prevent queueEnd race condition
+            guildData.isStopping = true;
 
-            // If ChatPlay, edit message back to idle state
-            if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
-                try {
-                    const container = createChatPlayIdleContainer();
-                    const channel = client.channels.cache.get(guildData.chatPlayChannelId);
-                    if (channel) {
-                        const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
-                        await msg.edit({
-                            components: [container],
-                            attachments: [],
-                            flags: MessageFlags.IsComponentsV2,
-                        });
-                    }
-                } catch (err) {
-                    console.error("[Musicify] Failed to edit ChatPlay message on stop:", err.message);
-                }
-            } else if (guildData.playerMessageId && guildData.playerChannelId) {
-                try {
-                    const channel = client.channels.cache.get(guildData.playerChannelId);
-                    if (channel) {
-                        const msg = await channel.messages.fetch(guildData.playerMessageId);
-                        await msg.delete();
-                    }
-                } catch (err) {
-                    // message already deleted
-                }
-                guildData.playerMessageId = null;
-                guildData.playerChannelId = null;
-            }
+            // Clean up UI
+            await cleanupPlayerUI(client, guildData);
+
+            // Reset player state (timers, suggestions, etc.)
+            resetPlayerState(guildData);
 
             player.queue.clear();
             player.stop();
 
             if (guildData.twentyFourSeven) {
+                guildData.isStopping = false;
                 return;
             }
 
             player.destroy();
+            guildData.isStopping = false;
             return;
         }
 
@@ -486,6 +543,8 @@ async function handleButtonInteraction(client, interaction) {
             if (player.queue.length > 0) {
                 player.queue.shuffle();
                 guildData.shuffle = true;
+                // Reset shuffle visual after 3 seconds
+                setTimeout(() => { guildData.shuffle = false; }, 3000);
             }
             needsVisualUpdate = true;
             break;
@@ -518,7 +577,6 @@ async function handleButtonInteraction(client, interaction) {
             needsVisualUpdate = true;
             break;
         }
-
 
         case "vol_up": {
             guildData.volume = Math.min(100, guildData.volume + 10);

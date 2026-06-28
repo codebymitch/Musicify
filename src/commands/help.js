@@ -76,10 +76,13 @@ function buildDropdown(activePage = "home") {
 async function buildHelpPage(client, page = "home") {
     const container = new ContainerBuilder();
 
-    // --- Header with bot avatar ---
-    const section = new SectionBuilder()
+    // --- Header: Command Browser style (Flamey-inspired) ---
+    const header = new SectionBuilder()
         .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent("# <:Musicify_Logo:1504329028356673536> Musicify")
+            new TextDisplayBuilder().setContent(
+                "## <:Musicify_Logo:1504329028356673536> Command Browser\n" +
+                "-# Select a category to view commands."
+            )
         )
         .setThumbnailAccessory(
             new ThumbnailBuilder().setURL(
@@ -87,9 +90,9 @@ async function buildHelpPage(client, page = "home") {
             )
         );
 
-    container.addSectionComponents(section);
+    container.addSectionComponents(header);
 
-    // --- Category Dropdown (at the top, like the Command Browser) ---
+    // --- Category Dropdown ---
     container.addActionRowComponents(buildDropdown(page));
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
@@ -187,34 +190,70 @@ function addHomePage(container, getCmd) {
 }
 
 function addMusicPage(container, getCmd) {
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            "### 🎶 Command Browser\n" +
-            "-# 17 commands available"
+    // --- Section header with Suggest button accessory ---
+    const musicHeader = new SectionBuilder()
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                "### 🎶 All Commands\n" +
+                "-# 17 commands available"
+            )
         )
-    );
+        .setButtonAccessory(
+            new ButtonBuilder()
+                .setLabel("💡 Suggest")
+                .setURL("https://discord.com/channels/1503210009251545152/1503721044291092480")
+                .setStyle(ButtonStyle.Link)
+        );
+
+    container.addSectionComponents(musicHeader);
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
+    // --- Commands 1-10 ---
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            `**1.** ${getCmd("play")} — Play a song or add it to the queue\n\n` +
-            `**2.** ${getCmd("skip")} — Skip the current track\n\n` +
-            `**3.** ${getCmd("stop")} — Stop playback, clear queue & disconnect\n\n` +
-            `**4.** ${getCmd("nowplaying")} — Show the currently playing track\n\n` +
-            `**5.** ${getCmd("seek")} — Seek to a position\n\n` +
-            `**6.** ${getCmd("queue")} — View the current queue\n\n` +
-            `**7.** ${getCmd("remove")} — Remove a track from the queue\n\n` +
-            `**8.** ${getCmd("move")} — Move a track's position\n\n` +
-            `**9.** ${getCmd("shuffle")} — Shuffle all tracks in the queue\n\n` +
-            `**10.** ${getCmd("loop")} — Set loop mode for track or queue\n\n` +
-            `**11.** ${getCmd("volume")} — Set the playback volume\n\n` +
-            `**12.** ${getCmd("247")} — Toggle 24/7 mode\n\n` +
-            `**13.** ${getCmd("filter")} — Apply an audio filter preset\n\n` +
-            `**14.** ${getCmd("chatplay", "enable")} — Resume listening for song requests\n\n` +
-            `**15.** ${getCmd("chatplay", "disable")} — Pause listening (keeps message)\n\n` +
-            `**16.** ${getCmd("chatplay", "setup")} — Send the persistent player message\n\n` +
-            `**17.** ${getCmd("about")} — Learn more about Musicify`
+            `**1.** ${getCmd("play")}\n` +
+            `-# Play a song or add it to the queue\n\n` +
+            `**2.** ${getCmd("skip")}\n` +
+            `-# Skip the current track\n\n` +
+            `**3.** ${getCmd("stop")}\n` +
+            `-# Stop playback, clear queue & disconnect\n\n` +
+            `**4.** ${getCmd("nowplaying")}\n` +
+            `-# Show the currently playing track\n\n` +
+            `**5.** ${getCmd("seek")}\n` +
+            `-# Seek to a position in the track\n\n` +
+            `**6.** ${getCmd("queue")}\n` +
+            `-# View the current queue\n\n` +
+            `**7.** ${getCmd("remove")}\n` +
+            `-# Remove a track from the queue\n\n` +
+            `**8.** ${getCmd("move")}\n` +
+            `-# Move a track's position\n\n` +
+            `**9.** ${getCmd("shuffle")}\n` +
+            `-# Shuffle all tracks in the queue\n\n` +
+            `**10.** ${getCmd("loop")}\n` +
+            `-# Set loop mode for track or queue`
+        )
+    );
+
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
+
+    // --- Commands 11-17 ---
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            `**11.** ${getCmd("volume")}\n` +
+            `-# Set the playback volume\n\n` +
+            `**12.** ${getCmd("247")}\n` +
+            `-# Toggle 24/7 mode\n\n` +
+            `**13.** ${getCmd("filter")}\n` +
+            `-# Apply an audio filter preset\n\n` +
+            `**14.** ${getCmd("chatplay", "enable")}\n` +
+            `-# Resume listening for song requests\n\n` +
+            `**15.** ${getCmd("chatplay", "disable")}\n` +
+            `-# Pause listening (keeps message)\n\n` +
+            `**16.** ${getCmd("chatplay", "setup")}\n` +
+            `-# Send the persistent player message\n\n` +
+            `**17.** ${getCmd("about")}\n` +
+            `-# Learn more about Musicify`
         )
     );
 }

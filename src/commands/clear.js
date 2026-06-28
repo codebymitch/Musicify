@@ -15,9 +15,10 @@ module.exports = {
             });
         }
 
-        if (!interaction.member.voice?.channel) {
+        const { canControlMusic, VOICE_CHANNEL_DENIAL } = require("../utils/permissions");
+        if (!canControlMusic(interaction.member, player)) {
             return interaction.reply({
-                content: "❌ You need to be in a voice channel!",
+                content: VOICE_CHANNEL_DENIAL,
                 flags: MessageFlags.Ephemeral,
             });
         }

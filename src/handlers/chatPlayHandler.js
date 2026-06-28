@@ -54,7 +54,11 @@ async function handleChatPlayMessage(client, message) {
     }
 
     // Check if the user is in a voice channel
-    const voiceChannel = message.member?.voice?.channel;
+    let voiceChannel = message.member?.voice?.channel;
+    if (!voiceChannel && guildData.defaultVoiceChannel) {
+        voiceChannel = client.channels.cache.get(guildData.defaultVoiceChannel);
+    }
+
     if (!voiceChannel) {
         try {
             const warn = await message.channel.send({

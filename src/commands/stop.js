@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
-const { getGuildData, clearUpdateInterval } = require("../utils/playerStore");
-const { createChatPlayIdleContainer } = require("../utils/components");
+const { getGuildData, resetPlayerState } = require("../utils/playerStore");
+const { canControlMusic, VOICE_CHANNEL_DENIAL } = require("../utils/permissions");
+const { cleanupPlayerUI } = require("../utils/cleanup");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -16,46 +17,29 @@ module.exports = {
             });
         }
 
-        if (!interaction.member.voice?.channel) {
+        if (!canControlMusic(interaction.member, player)) {
             return interaction.reply({
-                content: "❌ You need to be in a voice channel!",
+                content: VOICE_CHANNEL_DENIAL,
                 flags: MessageFlags.Ephemeral,
             });
         }
 
-        // Clean up guild state
         const guildData = getGuildData(interaction.guild.id);
-        clearUpdateInterval(guildData);
-        if (guildData.idleTimeout) {
-            clearTimeout(guildData.idleTimeout);
-            guildData.idleTimeout = null;
-        }
-        guildData.suggestions = [];
-        guildData.previousTracks = [];
+
+        // Set stopping flag to prevent queueEnd race condition
+        guildData.isStopping = true;
+
+        // Clean up UI using shared utility
+        await cleanupPlayerUI(client, guildData);
+
+        // Reset player state (timers, suggestions, history, etc.)
+        resetPlayerState(guildData);
 
         player.queue.clear();
         player.stop();
 
         if (guildData.twentyFourSeven) {
-            if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
-                try {
-                    const channel = client.channels.cache.get(guildData.chatPlayChannelId);
-                    if (channel) {
-                        const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
-                        await msg.edit({
-                            components: [createChatPlayIdleContainer()],
-                            attachments: [],
-                            flags: MessageFlags.IsComponentsV2,
-                        });
-                    }
-                } catch (err) {
-                    // message deleted
-                }
-            } else {
-                guildData.playerMessageId = null;
-                guildData.playerChannelId = null;
-            }
-
+            guildData.isStopping = false;
             const container = new ContainerBuilder();
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
@@ -70,9 +54,8 @@ module.exports = {
             });
         }
 
-        guildData.playerMessageId = null;
-        guildData.playerChannelId = null;
         player.destroy();
+        guildData.isStopping = false;
 
         const container = new ContainerBuilder();
         container.addTextDisplayComponents(

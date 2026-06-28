@@ -1,6 +1,5 @@
-const { getGuildData, deleteGuildData } = require("../utils/playerStore");
-const { createChatPlayIdleContainer } = require("../utils/components");
-const { MessageFlags } = require("discord.js");
+const { getGuildData, resetPlayerState } = require("../utils/playerStore");
+const { cleanupPlayerUI } = require("../utils/cleanup");
 
 module.exports = {
     name: "voiceStateUpdate",
@@ -9,7 +8,9 @@ module.exports = {
         if (oldState.id === client.user.id && !newState.channelId) {
             const player = client.riffy.players.get(oldState.guild.id);
             if (player) {
-                await resetChatPlayIfActive(client, oldState.guild.id);
+                const guildData = getGuildData(oldState.guild.id);
+                await cleanupPlayerUI(client, guildData);
+                resetPlayerState(guildData);
                 player.destroy();
             }
             return;
@@ -45,7 +46,8 @@ module.exports = {
                                     oldState.guild.id
                                 );
                                 if (player) {
-                                    await resetChatPlayIfActive(client, oldState.guild.id);
+                                    await cleanupPlayerUI(client, currentGuildData);
+                                    resetPlayerState(currentGuildData);
                                     player.destroy();
                                 }
                             }
@@ -56,35 +58,3 @@ module.exports = {
         }
     },
 };
-
-async function resetChatPlayIfActive(client, guildId) {
-    const guildData = getGuildData(guildId);
-    // Reset ChatPlay to idle
-    if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
-        try {
-            const channel = client.channels.cache.get(guildData.chatPlayChannelId);
-            if (channel) {
-                const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
-                await msg.edit({
-                    components: [createChatPlayIdleContainer()],
-                    attachments: [],
-                    flags: MessageFlags.IsComponentsV2,
-                });
-            }
-        } catch (err) {
-            // message may have been deleted
-        }
-    }
-    // Delete regular /play player message
-    else if (guildData.playerMessageId && guildData.playerChannelId) {
-        try {
-            const channel = client.channels.cache.get(guildData.playerChannelId);
-            if (channel) {
-                const msg = await channel.messages.fetch(guildData.playerMessageId);
-                await msg.delete();
-            }
-        } catch (err) {
-            // message already deleted
-        }
-    }
-}
